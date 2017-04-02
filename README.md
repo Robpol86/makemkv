@@ -12,6 +12,7 @@ Below are the available environment variables you may use to configure this Dock
 
 * **MKV_GID** The group ID of the `mkv` user inside the container.
 * **MKV_UID** The user ID of the `mkv` user inside the container.
+* **NO_EJECT** Disables ejecting the disc if set to "true".
 
 And below are the available volumes used by the Docker image:
 
@@ -43,7 +44,30 @@ sudo docker run -it \
 You should see something like this:
 
 ```
-TODO
+Unable to find image 'robpol86/makemkv:latest' locally
+latest: Pulling from robpol86/makemkv
+bc5187a39b05: Already exists
+3d9a191cc067: Pull complete
+fe1343ee5111: Pull complete
+f9e562c653cd: Pull complete
+50304eac31e3: Pull complete
+Digest: sha256:88e4bf005b0b0dfc3d7f3da85713aec9542f8ed213790864b6a7cdc500f7fbc1
+Status: Downloaded newer image for robpol86/makemkv:latest
+Ripping...
+MakeMKV v1.10.5 linux(x64-release) started
+Current operation: Scanning CD-ROM devices
+Current action: Scanning CD-ROM devices
+Current progress - 0%  , Total progress - 0%
+...
+Current progress - 92%  , Total progress - 0%
+Current action: Saving to MKV file
+Current progress - 0%  , Total progress - 0%
+...
+Current progress - 100%  , Total progress - 100%
+8 titles saved
+Copy complete. 8 titles saved.
+Ejecting...
+Done
 ```
 ## Automated Run
 

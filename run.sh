@@ -10,6 +10,7 @@ set -o pipefail  # Exit script if pipes fail instead of just the last program.
 
 declare -i MKV_GID=${MKV_GID:-0}
 declare -i MKV_UID=${MKV_UID:-0}
+declare -l NO_EJECT=${NO_EJECT:-false}
 
 # Kill makemkvcon when not enough disk space. It keeps going no matter what.
 low_space_term () {
@@ -50,8 +51,16 @@ if [ "$MKV_GID" -ne "0" ] && [ "$MKV_GID" -ne "$(id -g mkv)" ]; then
 fi
 
 # Rip media.
+echo "Ripping..."
 sudo -u mkv makemkvcon mkv --progress -same disc:0 all /output \
     |low_space_term \
     |no_overwrite \
     |catch_failed
-eject
+
+# Eject.
+if [ "$NO_EJECT" != "true" ]; then
+    echo "Ejecting..."
+    eject
+fi
+
+echo "Done"
