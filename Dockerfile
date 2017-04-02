@@ -6,11 +6,11 @@ RUN dnf update -y && \
     dnf config-manager --add-repo=http://negativo17.org/repos/fedora-multimedia.repo && \
     dnf install -y makemkv && \
     dnf clean all && \
-    sudo useradd -Ms /sbin/nologin -G cdrom mkv
+    sudo useradd -s /sbin/nologin -G cdrom mkv
 
 VOLUME /output
 WORKDIR /output
 COPY run.sh /run.sh
-COPY settings.conf /root/.MakeMKV/settings.conf
+COPY settings.conf /home/mkv/.MakeMKV/settings.conf
 
 CMD ["/run.sh"]

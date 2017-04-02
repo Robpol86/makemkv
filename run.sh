@@ -14,21 +14,31 @@ declare -i MKV_UID=${MKV_UID:-0}
 # Kill makemkvcon when not enough disk space. It keeps going no matter what.
 low_space_term () {
     ret=0
-    sed "/much as [0-9]\+ megabytes while there are only/q5" -- "$@" || ret=$?
+    sed -u "/much as [0-9]\+ megabytes while there are only/q5" || ret=$?
     [ ${ret} -ne 5 ] && return
     echo -e "\nERROR: Terminating MakeMKV due to low disk space.\n"
+    sync
+    kill 0
+}
+
+# Kill makemkvcon to prevent overwriting/re-ripping.
+no_overwrite () {
+    ret=0
+    sed -u "/Do you want to overwrite it/q5" || ret=$?
+    [ ${ret} -ne 5 ] && return
+    echo -e "\nERROR: Terminating MakeMKV due to file already exists.\n"
+    sync
     kill 0
 }
 
 # Exit 1 if any title failed to rip.
 catch_failed () {
     ret=0
-    sed "/Copy complete. [0-9]\+ titles saved, 0 failed./q5" -- "$@" || ret=$?
-    if [ ${ret} -ne 5 ]; then
-        echo -e "\nERROR: One or more titles failed.\n"
-        exit 1
-    fi
-    cat
+    sed -u "/Copy complete. [0-9]\+ titles saved, [0-9]\+ failed./q5" || ret=$?
+    [ ${ret} -ne 5 ] && return
+    echo -e "\nERROR: One or more titles failed.\n"
+    sync
+    exit 1
 }
 
 # Update UID and GID of "mkv" user at runtime.
@@ -42,4 +52,6 @@ fi
 # Rip media.
 sudo -u mkv makemkvcon mkv --progress -same disc:0 all /output \
     |low_space_term \
+    |no_overwrite \
     |catch_failed
+eject
