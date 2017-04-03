@@ -14,7 +14,7 @@ declare -l NO_EJECT=${NO_EJECT:-false}
 
 # Kill makemkvcon when not enough disk space. It keeps going no matter what.
 low_space_term () {
-    ret=0
+    local ret=0
     sed -u "/much as [0-9]\+ megabytes while there are only/q5" || ret=$?
     [ ${ret} -ne 5 ] && return
     echo -e "\nERROR: Terminating MakeMKV due to low disk space.\n"
@@ -24,7 +24,7 @@ low_space_term () {
 
 # Kill makemkvcon to prevent overwriting/re-ripping.
 no_overwrite () {
-    ret=0
+    local ret=0
     sed -u "/Do you want to overwrite it/q5" || ret=$?
     [ ${ret} -ne 5 ] && return
     echo -e "\nERROR: Terminating MakeMKV due to file already exists.\n"
@@ -34,7 +34,7 @@ no_overwrite () {
 
 # Exit 1 if any title failed to rip.
 catch_failed () {
-    ret=0
+    local ret=0
     sed -u "/Copy complete. [0-9]\+ titles saved, [0-9]\+ failed./q5" || ret=$?
     [ ${ret} -ne 5 ] && return
     echo -e "\nERROR: One or more titles failed.\n"
@@ -63,4 +63,4 @@ if [ "$NO_EJECT" != "true" ]; then
     eject
 fi
 
-echo "Done"
+echo "Done after $(date -u -d @$SECONDS +%T)"

@@ -6,6 +6,9 @@ Automatically backup your DVD and Bluray discs to local storage. When this Docke
 [udev rules](http://www.reactivated.net/writing_udev_rules.html) backups are as easy as inserting discs and then sitting
 back until the drive ejects the disc. Rinse and repeat.
 
+Note this Docker image only decrypts and rips to MKV files. It does not transcode/convert files into smaller sizes or
+other formats. Ripping Blurays may take up around **40 GB** or so in my experience.
+
 ## Variables and Volumes
 
 Below are the available environment variables you may use to configure this Docker image:
@@ -51,7 +54,7 @@ bc5187a39b05: Already exists
 fe1343ee5111: Pull complete
 f9e562c653cd: Pull complete
 50304eac31e3: Pull complete
-Digest: sha256:88e4bf005b0b0dfc3d7f3da85713aec9542f8ed213790864b6a7cdc500f7fbc1
+Digest: sha256:88e4bf005b0b0dfc3d7f3da85713aec9542f8ed213790864b6a7cdc
 Status: Downloaded newer image for robpol86/makemkv:latest
 Ripping...
 MakeMKV v1.10.5 linux(x64-release) started
@@ -69,6 +72,19 @@ Copy complete. 8 titles saved.
 Ejecting...
 Done
 ```
+
 ## Automated Run
 
-TODO
+Once you've verified this Docker image works fine on your system it's time to automate it. Lets start off with a simple
+udev rule that runs the image and then cleans up by deleting the container after it's done ripping (leaving the ripped
+files intact since they're in a volume). Create the following rules file and replace the user `you` with your non-root
+username.
+
+```
+# Save as: /etc/udev/rules.d/85-makemkv.rules
+SUBSYSTEM=="block", KERNEL=="sr[0-9]*", ACTION=="change", ENV{ID_FS_TYPE}=="udf", \
+    RUN+="docker run -d --rm --device=%E{DEVNAME} -e MKV_GID=$(id you -g) -e MKV_UID=$(id you -u) -v /home/you/videos:/output robpol86/makemkv"
+```
+
+After saving the file you don't need to reload anything or reboot. It should Just Work. Insert a disc and look for the
+container in `sudo docker ps`.
