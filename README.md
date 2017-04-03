@@ -35,12 +35,12 @@ lrwxrwxrwx. 1 root root 3 Mar 31 17:12 /dev/cdrom -> sr0
 Now go ahead and run the image:
 
 ```bash
-mkdir ~/videos
+mkdir ~/MakeMKV
 sudo docker run -it \
     --device=/dev/cdrom \
     -e MKV_GID=$(id -g) \
     -e MKV_UID=$(id -u) \
-    -v ~/videos:/output \
+    -v ~/MakeMKV:/output \
     robpol86/makemkv
 ```
 
@@ -83,7 +83,7 @@ username.
 ```
 # Save as: /etc/udev/rules.d/85-makemkv.rules
 SUBSYSTEM=="block", KERNEL=="sr[0-9]*", ACTION=="change", ENV{ID_FS_TYPE}=="udf", \
-    RUN+="docker run -d --rm --device=%E{DEVNAME} -e MKV_GID=$(id you -g) -e MKV_UID=$(id you -u) -v /home/you/videos:/output robpol86/makemkv"
+RUN+="/usr/bin/docker run -d --rm --device=%E{DEVNAME} -e MKV_GID=1000 -e MKV_UID=1000 -v /home/you/MakeMKV:/output robpol86/makemkv"
 ```
 
 After saving the file you don't need to reload anything or reboot. It should Just Work. Insert a disc and look for the
