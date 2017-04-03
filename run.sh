@@ -60,7 +60,7 @@ sudo -u mkv makemkvcon mkv --progress -same disc:0 all /output \
 # Eject.
 if [ "$NO_EJECT" != "true" ]; then
     echo "Ejecting..."
-    eject
+    eject "/dev/$(grep -oP 'drive name:\s+\K\w+' /proc/sys/dev/cdrom/info)"
 fi
 
 echo "Done after $(date -u -d @$SECONDS +%T)"

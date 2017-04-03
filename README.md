@@ -75,9 +75,9 @@ Done
 
 ## Automated Run
 
-Once you've verified this Docker image works fine on your system it's time to automate it. Lets start off with a simple
-udev rule that runs the image and then cleans up by deleting the container after it's done ripping (leaving the ripped
-files intact since they're in a volume). Note the udev rule file contents below. You'll want to change:
+Once you've verified this Docker image works fine on your system it's time to automate it. All you need is a simple udev
+rule that runs the image and then cleans up by deleting the container after it's done ripping (leaving the ripped files
+intact since they're in a volume). Note the udev rule file contents below. You'll want to change:
 
 1. The **MKV_GID** and **MKV_UID** IDs to your user's.
 2. The **/home/you/MakeMKV** file path to the directory that'll hold MKVs.
