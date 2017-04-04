@@ -1,7 +1,5 @@
 # Headless DVD/BD Backups with MakeMKV
 
-> NOTE: This repo is a work in progress.
-
 Automatically backup your DVD and Bluray discs to local storage. When this Docker image is used together with
 [udev rules](http://www.reactivated.net/writing_udev_rules.html) backups are as easy as inserting discs and then sitting
 back until the drive ejects the disc. Rinse and repeat.
@@ -49,7 +47,7 @@ You should see something like this:
 ```
 Unable to find image 'robpol86/makemkv:latest' locally
 latest: Pulling from robpol86/makemkv
-bc5187a39b05: Already exists
+bc5187a39b05: Pull complete
 3d9a191cc067: Pull complete
 fe1343ee5111: Pull complete
 f9e562c653cd: Pull complete
@@ -70,7 +68,12 @@ Current progress - 100%  , Total progress - 100%
 8 titles saved
 Copy complete. 8 titles saved.
 Ejecting...
-Done
+eject: device name is `/dev/cdrom'
+eject: /dev/cdrom: not mounted
+eject: /dev/cdrom: is whole-disk device
+eject: /dev/cdrom: trying to eject using CD-ROM eject command
+eject: CD-ROM eject command succeeded
+Done after 00:03:46
 ```
 
 ## Automated Run
@@ -90,3 +93,12 @@ RUN+="/usr/bin/docker run -d --rm --device=%E{DEVNAME} -e MKV_GID=1000 -e MKV_UI
 
 After saving the file you don't need to reload anything or reboot. It should Just Work. Insert a disc and look for the
 container in `sudo docker ps`. Make sure it's working by tailing the output with `sudo docker logs <CID> --follow`.
+
+### Notifications
+
+The one downside to the above automated run is that it deletes the container as soon as it finishes regardless if the
+rip was successful. This means that you cannot look at the output when something fails (e.g. not enough disk space).
+
+My solution to this problem is having the Docker daemon log to journald and setup a systemd service unit file that
+watches for failed Docker containers and emails you the log output. More information on that here:
+https://robpol86.github.io/influxdb/prepare.html#email-notifications

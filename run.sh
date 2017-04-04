@@ -60,7 +60,18 @@ sudo -u mkv makemkvcon mkv --progress -same disc:0 all /output \
 # Eject.
 if [ "$NO_EJECT" != "true" ]; then
     echo "Ejecting..."
-    eject "/dev/$(grep -oP 'drive name:\s+\K\w+' /proc/sys/dev/cdrom/info)"
+    device=
+    for d in /dev/cdrom /dev/sr[0-9]*; do
+        if [ -b "$d" ]; then
+            device="$d"
+            break
+        fi
+    done
+    if [ -z "$device" ]; then
+        echo -e "\nERROR: Unable to find optical device to eject.\n"
+        exit 1
+    fi
+    eject --verbose "$device"
 fi
 
 echo "Done after $(date -u -d @$SECONDS +%T)"
