@@ -10,6 +10,7 @@ set -o pipefail  # Exit script if pipes fail instead of just the last program.
 
 declare -i MKV_GID=${MKV_GID:-0}
 declare -i MKV_UID=${MKV_UID:-0}
+declare -l DEBUG=${DEBUG:-false}
 declare -l NO_EJECT=${NO_EJECT:-false}
 
 # Kill makemkvcon when not enough disk space. It keeps going no matter what.
@@ -17,7 +18,7 @@ low_space_term () {
     local ret=0
     sed -u "/much as [0-9]\+ megabytes while there are only/q5" || ret=$?
     [ ${ret} -ne 5 ] && return
-    echo -e "\nERROR: Terminating MakeMKV due to low disk space.\n"
+    echo -e "\nERROR: Terminating MakeMKV due to low disk space.\n" >&2
     sync
     kill 0
 }
@@ -27,7 +28,7 @@ no_overwrite () {
     local ret=0
     sed -u "/Do you want to overwrite it/q5" || ret=$?
     [ ${ret} -ne 5 ] && return
-    echo -e "\nERROR: Terminating MakeMKV due to file already exists.\n"
+    echo -e "\nERROR: Terminating MakeMKV due to file already exists.\n" >&2
     sync
     kill 0
 }
@@ -37,17 +38,23 @@ catch_failed () {
     local ret=0
     sed -u "/Copy complete. [0-9]\+ titles saved, [0-9]\+ failed./q5" || ret=$?
     [ ${ret} -ne 5 ] && return
-    echo -e "\nERROR: One or more titles failed.\n"
+    echo -e "\nERROR: One or more titles failed.\n" >&2
     sync
     exit 1
 }
+
+# Printing environment.
+if [ "$DEBUG" == "true" ]; then
+    set -x  # Print command traces before executing command.
+    env |sort
+fi
 
 # Update UID and GID of "mkv" user at runtime.
 if [ "$MKV_UID" -ne "0" ] && [ "$MKV_UID" -ne "$(id -u mkv)" ]; then
     usermod -ou "$MKV_UID" mkv
 fi
 if [ "$MKV_GID" -ne "0" ] && [ "$MKV_GID" -ne "$(id -g mkv)" ]; then
-    usermod -og "$MKV_GID" mkv
+    groupmod -og "$MKV_GID" mkv
 fi
 
 # Rip media.
@@ -68,10 +75,14 @@ if [ "$NO_EJECT" != "true" ]; then
         fi
     done
     if [ -z "$device" ]; then
-        echo -e "\nERROR: Unable to find optical device to eject.\n"
+        echo -e "\nERROR: Unable to find optical device to eject.\n" >&2
         exit 1
     fi
-    eject --verbose "$device"
+    if [ "$DEBUG" == "true" ]; then
+        eject --verbose "$device"
+    else
+        eject "$device"
+    fi
 fi
 
 echo "Done after $(date -u -d @$SECONDS +%T)"

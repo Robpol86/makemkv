@@ -11,6 +11,7 @@ or other formats. Ripping Blurays may take up around **40 GB** or so in my exper
 
 Below are the available environment variables you may use to configure this Docker image:
 
+* **DEBUG** Enables debug output if set to "true".
 * **MKV_GID** The group ID of the `mkv` user inside the container.
 * **MKV_UID** The user ID of the `mkv` user inside the container.
 * **NO_EJECT** Disables ejecting the disc if set to "true".
@@ -33,13 +34,10 @@ lrwxrwxrwx. 1 root root 3 Mar 31 17:12 /dev/cdrom -> sr0
 Now go ahead and run the image:
 
 ```bash
-mkdir ~/MakeMKV
-sudo docker run -it \
-    --device=/dev/cdrom \
-    -e MKV_GID=$(id -g) \
-    -e MKV_UID=$(id -u) \
-    -v ~/MakeMKV:/output \
-    robpol86/makemkv
+mkdir /tmp/MakeMKV
+sudo docker run -it --device=/dev/cdrom \
+    -e MKV_GID=$(id -g) -e MKV_UID=$(id -u) \
+    -v /tmp/MakeMKV:/output robpol86/makemkv
 ```
 
 You should see something like this:
@@ -68,11 +66,6 @@ Current progress - 100%  , Total progress - 100%
 8 titles saved
 Copy complete. 8 titles saved.
 Ejecting...
-eject: device name is `/dev/cdrom'
-eject: /dev/cdrom: not mounted
-eject: /dev/cdrom: is whole-disk device
-eject: /dev/cdrom: trying to eject using CD-ROM eject command
-eject: CD-ROM eject command succeeded
 Done after 00:25:54
 ```
 
@@ -83,12 +76,13 @@ rule that runs the image and then cleans up by deleting the container after it's
 intact since they're in a volume). Note the udev rule file contents below. You'll want to change:
 
 1. The **MKV_GID** and **MKV_UID** IDs to your user's.
-2. The **/home/you/MakeMKV** file path to the directory that'll hold MKVs.
+2. The **/tmp/MakeMKV** file path to the directory that'll hold MKVs.
 
 ```
 # Save as: /etc/udev/rules.d/85-makemkv.rules
 SUBSYSTEM=="block", KERNEL=="sr[0-9]*", ACTION=="change", ENV{ID_FS_TYPE}=="udf", \
-RUN+="/usr/bin/docker run -d --rm --device=%E{DEVNAME} -e MKV_GID=1000 -e MKV_UID=1000 -v /home/you/MakeMKV:/output robpol86/makemkv"
+ENV{DEBUG}="true", ENV{MKV_GID}="1000", ENV{MKV_UID}="1000", \
+RUN+="/bin/bash -c 'docker run -d --rm --device=%E{DEVNAME} --env-file=<(env) -v /tmp/MakeMKV:/output robpol86/makemkv'"
 ```
 
 After saving the file you don't need to reload anything or reboot. It should Just Work. Insert a disc and look for the
