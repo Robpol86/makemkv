@@ -73,7 +73,7 @@ eject: /dev/cdrom: not mounted
 eject: /dev/cdrom: is whole-disk device
 eject: /dev/cdrom: trying to eject using CD-ROM eject command
 eject: CD-ROM eject command succeeded
-Done after 00:03:46
+Done after 00:25:54
 ```
 
 ## Automated Run
