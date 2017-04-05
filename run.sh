@@ -10,8 +10,8 @@ set -o pipefail  # Exit script if pipes fail instead of just the last program.
 
 declare -i MKV_GID=${MKV_GID:-0}
 declare -i MKV_UID=${MKV_UID:-0}
-declare -l DEBUG=${DEBUG:-false}
-declare -l NO_EJECT=${NO_EJECT:-false}
+declare -l DEBUG=${DEBUG:-} && [ "$DEBUG" == "true" ] || DEBUG=
+declare -l NO_EJECT=${NO_EJECT:-} && [ "$NO_EJECT" == "true" ] || NO_EJECT=
 
 # Print environment.
 if [ "$DEBUG" == "true" ]; then
@@ -62,11 +62,13 @@ if [ "$MKV_GID" -ne "0" ] && [ "$MKV_GID" -ne "$(id -g mkv)" ]; then
     groupmod -og "$MKV_GID" mkv
 fi
 
-# Rip media.
-echo "Ripping..."
+# Create destination directory.
 if [ ! -e "$DIRECTORY" ]; then
     sudo -u mkv mkdir -p "$DIRECTORY"
 fi
+
+# Rip media.
+echo "Ripping..."
 sudo -u mkv makemkvcon mkv --progress -same disc:0 all "$DIRECTORY" \
     |low_space_term \
     |no_overwrite \
@@ -86,11 +88,7 @@ if [ "$NO_EJECT" != "true" ]; then
         echo -e "\nERROR: Unable to find optical device to eject.\n" >&2
         exit 1
     fi
-    if [ "$DEBUG" == "true" ]; then
-        eject --verbose "$device"
-    else
-        eject "$device"
-    fi
+    eject ${DEBUG:+--verbose} "$device"
 fi
 
 echo "Done after $(date -u -d @$SECONDS +%T)"
