@@ -2,16 +2,17 @@
 
 Automatically backup your DVD and Bluray discs to local storage. When this Docker image is used together with
 [udev rules](http://www.reactivated.net/writing_udev_rules.html) backups are as easy as inserting discs and then sitting
-back until the drive ejects the disc. Rinse and repeat.
+back until the drive ejects them. Rinse and repeat.
 
 Note that this Docker image only decrypts and rips to MKV files. It does not transcode/convert files into smaller sizes
-or other formats. Ripping Blurays may take up around **40 GB** or so in my experience.
+or other formats. Ripped Blurays may take up around **40 GB** or so in my experience.
 
 ## Variables and Volumes
 
 Below are the available environment variables you may use to configure this Docker image:
 
 * **DEBUG** Enables debug output if set to "true".
+* **DIRECTORY** Subdirectory name to write MKVs in.
 * **MKV_GID** The group ID of the `mkv` user inside the container.
 * **MKV_UID** The user ID of the `mkv` user inside the container.
 * **NO_EJECT** Disables ejecting the disc if set to "true".
@@ -19,6 +20,9 @@ Below are the available environment variables you may use to configure this Dock
 And below are the available volumes used by the Docker image:
 
 * **/output** Ripped MKV files are written to this directory inside the container.
+
+By default **DIRECTORY** is the name of the disc. If you set the variable to an empty string MKV files will be written
+to the root of the mapped **/output** directory (no subdirectories).
 
 ## Run Manually
 

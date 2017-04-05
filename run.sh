@@ -13,6 +13,17 @@ declare -i MKV_UID=${MKV_UID:-0}
 declare -l DEBUG=${DEBUG:-false}
 declare -l NO_EJECT=${NO_EJECT:-false}
 
+# Print environment.
+if [ "$DEBUG" == "true" ]; then
+    set -x  # Print command traces before executing command.
+    env |sort
+fi
+
+# Determine destination directory.
+ID_FS_LABEL=${ID_FS_LABEL:-$(blkid -o value -s LABEL)}
+ID_FS_UUID=${ID_FS_UUID:-$(blkid -o value -s UUID)}
+DIRECTORY=/output/${DIRECTORY-${ID_FS_LABEL:-${ID_FS_UUID:-}}}
+
 # Kill makemkvcon when not enough disk space. It keeps going no matter what.
 low_space_term () {
     local ret=0
@@ -43,12 +54,6 @@ catch_failed () {
     exit 1
 }
 
-# Printing environment.
-if [ "$DEBUG" == "true" ]; then
-    set -x  # Print command traces before executing command.
-    env |sort
-fi
-
 # Update UID and GID of "mkv" user at runtime.
 if [ "$MKV_UID" -ne "0" ] && [ "$MKV_UID" -ne "$(id -u mkv)" ]; then
     usermod -ou "$MKV_UID" mkv
@@ -59,7 +64,10 @@ fi
 
 # Rip media.
 echo "Ripping..."
-sudo -u mkv makemkvcon mkv --progress -same disc:0 all /output \
+if [ ! -e "$DIRECTORY" ]; then
+    sudo -u mkv mkdir -p "$DIRECTORY"
+fi
+sudo -u mkv makemkvcon mkv --progress -same disc:0 all "$DIRECTORY" \
     |low_space_term \
     |no_overwrite \
     |catch_failed
