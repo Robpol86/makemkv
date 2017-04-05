@@ -16,6 +16,7 @@ Below are the available environment variables you may use to configure this Dock
 * **MKV_GID** The group ID of the `mkv` user inside the container.
 * **MKV_UID** The user ID of the `mkv` user inside the container.
 * **NO_EJECT** Disables ejecting the disc if set to "true".
+* **ROBUST** Better handling of copy protection if set to "true".
 
 And below are the available volumes used by the Docker image:
 
@@ -23,6 +24,12 @@ And below are the available volumes used by the Docker image:
 
 By default **DIRECTORY** is the name of the disc. If you set the variable to an empty string MKV files will be written
 to the root of the mapped **/output** directory (no subdirectories).
+
+The **ROBUST** variable is for some DVDs that include errors on the disc that MakeMKV doesn't handle well. Setting this
+to "true" introduces an intermediary step where the DVD is ripped into a still-encrypted ISO by `ddrescue` which has
+better error handling. Afterwards makemkvcon is run from that ISO to handle decrypting and creating MKV files. The
+downside to this is that you'll need twice as much free disk space available to hold the ISO and the MKV files at the
+same time.
 
 ## Run Manually
 

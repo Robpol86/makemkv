@@ -12,6 +12,7 @@ declare -i MKV_GID=${MKV_GID:-0}
 declare -i MKV_UID=${MKV_UID:-0}
 declare -l DEBUG=${DEBUG:-} && [ "$DEBUG" == "true" ] || DEBUG=
 declare -l NO_EJECT=${NO_EJECT:-} && [ "$NO_EJECT" == "true" ] || NO_EJECT=
+declare -l ROBUST=${ROBUST:-} && [ "$ROBUST" == "true" ] || ROBUST=
 
 # Print environment.
 if [ "$DEBUG" == "true" ]; then
@@ -23,6 +24,15 @@ fi
 ID_FS_LABEL=${ID_FS_LABEL:-$(blkid -o value -s LABEL)}
 ID_FS_UUID=${ID_FS_UUID:-$(blkid -o value -s UUID)}
 DIRECTORY=/output/${DIRECTORY-${ID_FS_LABEL:-${ID_FS_UUID:-}}}
+
+# Determine device file for ddrescue and eject.
+DEVICE=
+for d in /dev/cdrom /dev/sr[0-9]*; do
+    if [ -b "$d" ]; then
+        DEVICE="$d"
+        break
+    fi
+done
 
 # Kill makemkvcon when not enough disk space. It keeps going no matter what.
 low_space_term () {
@@ -69,7 +79,13 @@ fi
 
 # Rip media.
 echo "Ripping..."
-sudo -u mkv makemkvcon mkv --progress -same disc:0 all "$DIRECTORY" \
+src=disc:0
+if [ "$ROBUST" == "true" ]; then
+    src="iso:$DIRECTORY/encrypted.iso"
+    sudo -u mkv ddrescue -b 2048 -d ${DEBUG:+-v} "$DEVICE" "${src:4}"
+    echo "Done ripping to ISO. Converting (lossless) to MKV..."
+fi
+sudo -u mkv makemkvcon mkv --progress -same "$src" all "$DIRECTORY" \
     |low_space_term \
     |no_overwrite \
     |catch_failed
@@ -77,18 +93,16 @@ sudo -u mkv makemkvcon mkv --progress -same disc:0 all "$DIRECTORY" \
 # Eject.
 if [ "$NO_EJECT" != "true" ]; then
     echo "Ejecting..."
-    device=
-    for d in /dev/cdrom /dev/sr[0-9]*; do
-        if [ -b "$d" ]; then
-            device="$d"
-            break
-        fi
-    done
-    if [ -z "$device" ]; then
+    if [ -z "$DEVICE" ]; then
         echo -e "\nERROR: Unable to find optical device to eject.\n" >&2
         exit 1
     fi
-    eject ${DEBUG:+--verbose} "$device"
+    eject ${DEBUG:+--verbose} "$DEVICE"
+fi
+
+# Cleanup.
+if [ "$ROBUST" == "true" ]; then
+    sudo -u mkv rm ${DEBUG:+-v} "${src:4}"  # Delete ISO since makemkvcon finished.
 fi
 
 echo "Done after $(date -u -d @$SECONDS +%T)"
