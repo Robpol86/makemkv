@@ -82,7 +82,8 @@ intact since they're in a volume). Note the udev rule file contents below. You'l
 # Save as: /etc/udev/rules.d/85-makemkv.rules
 SUBSYSTEM=="block", KERNEL=="sr[0-9]*", ACTION=="change", ENV{ID_FS_TYPE}=="udf", \
 ENV{DEBUG}="true", ENV{MKV_GID}="1000", ENV{MKV_UID}="1000", \
-RUN+="/bin/bash -c 'docker run -d --rm --device=%E{DEVNAME} --env-file=<(env) -v /tmp/MakeMKV:/output --log-opt tag=makemkv robpol86/makemkv'"
+RUN+="/bin/bash -c 'docker run -d --rm --device=%E{DEVNAME} --env-file=<(env) \
+    -v /tmp/MakeMKV:/output --log-opt tag=makemkv robpol86/makemkv'"
 ```
 
 After saving the file you don't need to reload anything or reboot. It should Just Work. Insert a disc and look for the
