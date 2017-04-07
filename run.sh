@@ -76,4 +76,4 @@ if [ "$NO_EJECT" != "true" ]; then
     eject ${DEBUG:+--verbose} "$device"
 fi
 
-echo "Done after $(date -u -d @$SECONDS +%T)"
+echo Done after $(date -u -d @$SECONDS +%T) with $(basename "$DIRECTORY")
