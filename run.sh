@@ -39,7 +39,7 @@ catch_failed () {
     exit 1
 }
 
-# detect the device
+# Detect the device.
 device=
 for d in /dev/cdrom /dev/sr[0-9]*; do
     if [ -b "$d" ]; then
@@ -60,7 +60,7 @@ if [ "$MKV_GID" -ne "0" ] && [ "$MKV_GID" -ne "$(id -g mkv)" ]; then
     groupmod -og "$MKV_GID" mkv
 fi
 
-# add the "mkv" user to a group that can work on the cdrom
+# Add the "mkv" user to a group that can work on the device.
 device_group=$(stat -c "%G" "$device")
 if [ "$device_group" = "UNKNOWN" ]; then
     device_gid=$(stat -c "%g" "$device")
@@ -69,23 +69,29 @@ if [ "$device_group" = "UNKNOWN" ]; then
 fi
 usermod -a -G "$device_group" mkv
 
-# Determine destination directory.
+# Determine DVD name.
 ID_FS_LABEL=${ID_FS_LABEL:-$(blkid -o value -s LABEL)}
 ID_FS_UUID=${ID_FS_UUID:-$(blkid -o value -s UUID)}
 TEMPLATE="${ID_FS_LABEL:-nolabel}_${ID_FS_UUID:-nouuid}_XXX"
 
-mkdir -p /output/.makemkv/
-DIRECTORY=$(mktemp -d "/output/.makemkv/$TEMPLATE")
+# Determine destination directory.
+DIRECTORY=$(mktemp -d "/output/$TEMPLATE")
 chown mkv:mkv "$DIRECTORY"
+
+# Determine directory to use while the rip is incoming.
+INCOMING_DIR="$DIRECTORY/.rip"
+mkdir -p "$INCOMING_DIR"
+chown mkv:mkv "$INCOMING_DIR"
 
 # Rip media.
 echo "Ripping..."
-sudo -u mkv makemkvcon mkv --progress -same --directio true disc:0 all "$DIRECTORY" \
+sudo -u mkv makemkvcon mkv --progress -same --directio true disc:0 all "$INCOMING_DIR" \
     |low_space_term \
     |catch_failed
 
-# Move media from incoming directory to movie directory
-mv "$DIRECTORY" /output/
+# Move media from incoming directory to movie directory.
+mv "$INCOMING_DIR/*" "$DIRECTORY/"
+rm -rf "$INCOMING_DIR"
 
 # Eject.
 if [ "$NO_EJECT" != "true" ]; then
