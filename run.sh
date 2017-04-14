@@ -39,28 +39,7 @@ catch_failed () {
     exit 1
 }
 
-# Update UID and GID of "mkv" user at runtime.
-if [ "$MKV_UID" -ne "0" ] && [ "$MKV_UID" -ne "$(id -u mkv)" ]; then
-    usermod -ou "$MKV_UID" mkv
-fi
-if [ "$MKV_GID" -ne "0" ] && [ "$MKV_GID" -ne "$(id -g mkv)" ]; then
-    groupmod -og "$MKV_GID" mkv
-fi
-
-chown mkv:mkv /output
-
-# Determine destination directory.
-ID_FS_LABEL=${ID_FS_LABEL:-$(blkid -o value -s LABEL)}
-echo "ID_FS_LABEL=$ID_FS_LABEL"
-ID_FS_UUID=${ID_FS_UUID:-$(blkid -o value -s UUID)}
-echo "ID_FS_UUID=$ID_FS_UUID"
-
-TEMPLATE="${ID_FS_LABEL:-nolabel}_${ID_FS_UUID:-nouuid}_XXX"
-echo "TEMPLATE=$TEMPLATE"
-
-DIRECTORY=$(sudo -u mkv mktemp -d "/output/$TEMPLATE")
-
-# detect the device. sometimes makemkvcon fails so we do it here
+# detect the device
 device=""
 for d in /dev/cdrom /dev/sr[0-9]*; do
     if [ -b "$d" ]; then
@@ -73,6 +52,36 @@ if [ -z "$device" ]; then
     exit 1
 fi
 echo "device=$device"
+
+# Update UID and GID of "mkv" user at runtime.
+if [ "$MKV_UID" -ne "0" ] && [ "$MKV_UID" -ne "$(id -u mkv)" ]; then
+    usermod -ou "$MKV_UID" mkv
+fi
+if [ "$MKV_GID" -ne "0" ] && [ "$MKV_GID" -ne "$(id -g mkv)" ]; then
+    groupmod -og "$MKV_GID" mkv
+fi
+
+# add the "mkv" user to a group that can work on the cdrom
+device_group=$(stat -c "%G" "$device")
+if [ "$device_group" = "UNKNOWN" ]; then
+    device_gid=$(stat -c "%g" "$device")
+    device_group=cdrom_docker
+
+    groupadd --gid "$device_gid" "$device_group"
+fi
+usermod -a -G "$device_group" mkv
+
+# Determine destination directory.
+ID_FS_LABEL=${ID_FS_LABEL:-$(blkid -o value -s LABEL)}
+echo "ID_FS_LABEL=$ID_FS_LABEL"
+ID_FS_UUID=${ID_FS_UUID:-$(blkid -o value -s UUID)}
+echo "ID_FS_UUID=$ID_FS_UUID"
+
+TEMPLATE="${ID_FS_LABEL:-nolabel}_${ID_FS_UUID:-nouuid}_XXX"
+echo "TEMPLATE=$TEMPLATE"
+
+chown mkv:mkv /output
+DIRECTORY=$(sudo -u mkv mktemp -d "/output/$TEMPLATE")
 
 # Rip media.
 echo "Ripping..."
