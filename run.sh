@@ -74,7 +74,7 @@ ID_FS_LABEL=${ID_FS_LABEL:-$(blkid -o value -s LABEL)}
 ID_FS_UUID=${ID_FS_UUID:-$(blkid -o value -s UUID)}
 TEMPLATE="${ID_FS_LABEL:-nolabel}_${ID_FS_UUID:-nouuid}_XXX"
 
-DIRECTORY=$(mktemp -d "/output/$TEMPLATE")
+DIRECTORY=$(mktemp -d "/output/.makemkv/$TEMPLATE")
 chown mkv:mkv "$DIRECTORY"
 
 # Rip media.
@@ -82,6 +82,9 @@ echo "Ripping..."
 sudo -u mkv makemkvcon mkv --progress -same --directio true disc:0 all "$DIRECTORY" \
     |low_space_term \
     |catch_failed
+
+# Move media from incoming directory to movie directory
+mv "$DIRECTORY" /output/
 
 # Eject.
 if [ "$NO_EJECT" != "true" ]; then
