@@ -74,6 +74,7 @@ ID_FS_LABEL=${ID_FS_LABEL:-$(blkid -o value -s LABEL)}
 ID_FS_UUID=${ID_FS_UUID:-$(blkid -o value -s UUID)}
 TEMPLATE="${ID_FS_LABEL:-nolabel}_${ID_FS_UUID:-nouuid}_XXX"
 
+mkdir -p /output/.makemkv/
 DIRECTORY=$(mktemp -d "/output/.makemkv/$TEMPLATE")
 chown mkv:mkv "$DIRECTORY"
 
