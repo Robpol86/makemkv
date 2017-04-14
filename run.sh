@@ -90,7 +90,7 @@ sudo -u mkv makemkvcon mkv --progress -same --directio true disc:0 all "$INCOMIN
     |catch_failed
 
 # Move media from incoming directory to movie directory.
-mv "$INCOMING_DIR/"* "$DIRECTORY/"
+sudo -u mkv mv "$INCOMING_DIR/"* "$DIRECTORY/"
 sudo -u mkv rmdir "$INCOMING_DIR"
 
 # Eject.
