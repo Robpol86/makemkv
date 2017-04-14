@@ -47,11 +47,32 @@ if [ "$MKV_GID" -ne "0" ] && [ "$MKV_GID" -ne "$(id -g mkv)" ]; then
     groupmod -og "$MKV_GID" mkv
 fi
 
+chown mkv:mkv /output
+
 # Determine destination directory.
 ID_FS_LABEL=${ID_FS_LABEL:-$(blkid -o value -s LABEL)}
+echo "ID_FS_LABEL=$ID_FS_LABEL"
 ID_FS_UUID=${ID_FS_UUID:-$(blkid -o value -s UUID)}
+echo "ID_FS_UUID=$ID_FS_UUID"
+
 TEMPLATE="${ID_FS_LABEL:-nolabel}_${ID_FS_UUID:-nouuid}_XXX"
+echo "TEMPLATE=$TEMPLATE"
+
 DIRECTORY=$(sudo -u mkv mktemp -d "/output/$TEMPLATE")
+
+# detect the device. sometimes makemkvcon fails so we do it here
+device=""
+for d in /dev/cdrom /dev/sr[0-9]*; do
+    if [ -b "$d" ]; then
+        device="$d"
+        break
+    fi
+done
+if [ -z "$device" ]; then
+    echo -e "\nERROR: Unable to find optical device to eject.\n" >&2
+    exit 1
+fi
+echo "device=$device"
 
 # Rip media.
 echo "Ripping..."
@@ -62,17 +83,6 @@ sudo -u mkv makemkvcon mkv --progress -same --directio true disc:0 all "$DIRECTO
 # Eject.
 if [ "$NO_EJECT" != "true" ]; then
     echo "Ejecting..."
-    device=
-    for d in /dev/cdrom /dev/sr[0-9]*; do
-        if [ -b "$d" ]; then
-            device="$d"
-            break
-        fi
-    done
-    if [ -z "$device" ]; then
-        echo -e "\nERROR: Unable to find optical device to eject.\n" >&2
-        exit 1
-    fi
     eject ${DEBUG:+--verbose} "$device"
 fi
 
