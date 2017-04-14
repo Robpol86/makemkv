@@ -39,6 +39,19 @@ catch_failed () {
     exit 1
 }
 
+# detect the device
+device=
+for d in /dev/cdrom /dev/sr[0-9]*; do
+    if [ -b "$d" ]; then
+        device="$d"
+        break
+    fi
+done
+if [ -z "$device" ]; then
+    echo -e "\nERROR: Unable to find optical device to eject.\n" >&2
+    exit 1
+fi
+
 # Update UID and GID of "mkv" user at runtime.
 if [ "$MKV_UID" -ne "0" ] && [ "$MKV_UID" -ne "$(id -u mkv)" ]; then
     usermod -ou "$MKV_UID" mkv
@@ -47,11 +60,22 @@ if [ "$MKV_GID" -ne "0" ] && [ "$MKV_GID" -ne "$(id -g mkv)" ]; then
     groupmod -og "$MKV_GID" mkv
 fi
 
+# add the "mkv" user to a group that can work on the cdrom
+device_group=$(stat -c "%G" "$device")
+if [ "$device_group" = "UNKNOWN" ]; then
+    device_gid=$(stat -c "%g" "$device")
+    device_group=cdrom_docker
+    groupadd --gid "$device_gid" "$device_group"
+fi
+usermod -a -G "$device_group" mkv
+
 # Determine destination directory.
 ID_FS_LABEL=${ID_FS_LABEL:-$(blkid -o value -s LABEL)}
 ID_FS_UUID=${ID_FS_UUID:-$(blkid -o value -s UUID)}
 TEMPLATE="${ID_FS_LABEL:-nolabel}_${ID_FS_UUID:-nouuid}_XXX"
-DIRECTORY=$(sudo -u mkv mktemp -d "/output/$TEMPLATE")
+
+DIRECTORY=$(mktemp -d "/output/$TEMPLATE")
+chown mkv:mkv "$DIRECTORY"
 
 # Rip media.
 echo "Ripping..."
@@ -62,17 +86,6 @@ sudo -u mkv makemkvcon mkv --progress -same --directio true disc:0 all "$DIRECTO
 # Eject.
 if [ "$NO_EJECT" != "true" ]; then
     echo "Ejecting..."
-    device=
-    for d in /dev/cdrom /dev/sr[0-9]*; do
-        if [ -b "$d" ]; then
-            device="$d"
-            break
-        fi
-    done
-    if [ -z "$device" ]; then
-        echo -e "\nERROR: Unable to find optical device to eject.\n" >&2
-        exit 1
-    fi
     eject ${DEBUG:+--verbose} "$device"
 fi
 
