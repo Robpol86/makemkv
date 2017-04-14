@@ -74,8 +74,8 @@ ID_FS_LABEL=${ID_FS_LABEL:-$(blkid -o value -s LABEL)}
 ID_FS_UUID=${ID_FS_UUID:-$(blkid -o value -s UUID)}
 TEMPLATE="${ID_FS_LABEL:-nolabel}_${ID_FS_UUID:-nouuid}_XXX"
 
-chown mkv:mkv /output
-DIRECTORY=$(sudo -u mkv mktemp -d "/output/$TEMPLATE")
+DIRECTORY=$(mktemp -d "/output/$TEMPLATE")
+chown mkv:mkv "/output/$TEMPLATE"
 
 # Rip media.
 echo "Ripping..."
