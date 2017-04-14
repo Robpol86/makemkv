@@ -40,7 +40,7 @@ catch_failed () {
 }
 
 # detect the device
-device=""
+device=
 for d in /dev/cdrom /dev/sr[0-9]*; do
     if [ -b "$d" ]; then
         device="$d"
@@ -51,7 +51,6 @@ if [ -z "$device" ]; then
     echo -e "\nERROR: Unable to find optical device to eject.\n" >&2
     exit 1
 fi
-echo "device=$device"
 
 # Update UID and GID of "mkv" user at runtime.
 if [ "$MKV_UID" -ne "0" ] && [ "$MKV_UID" -ne "$(id -u mkv)" ]; then
@@ -66,19 +65,14 @@ device_group=$(stat -c "%G" "$device")
 if [ "$device_group" = "UNKNOWN" ]; then
     device_gid=$(stat -c "%g" "$device")
     device_group=cdrom_docker
-
     groupadd --gid "$device_gid" "$device_group"
 fi
 usermod -a -G "$device_group" mkv
 
 # Determine destination directory.
 ID_FS_LABEL=${ID_FS_LABEL:-$(blkid -o value -s LABEL)}
-echo "ID_FS_LABEL=$ID_FS_LABEL"
 ID_FS_UUID=${ID_FS_UUID:-$(blkid -o value -s UUID)}
-echo "ID_FS_UUID=$ID_FS_UUID"
-
 TEMPLATE="${ID_FS_LABEL:-nolabel}_${ID_FS_UUID:-nouuid}_XXX"
-echo "TEMPLATE=$TEMPLATE"
 
 chown mkv:mkv /output
 DIRECTORY=$(sudo -u mkv mktemp -d "/output/$TEMPLATE")
