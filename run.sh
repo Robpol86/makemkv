@@ -75,7 +75,7 @@ ID_FS_UUID=${ID_FS_UUID:-$(blkid -o value -s UUID)}
 TEMPLATE="${ID_FS_LABEL:-nolabel}_${ID_FS_UUID:-nouuid}_XXX"
 
 DIRECTORY=$(mktemp -d "/output/$TEMPLATE")
-chown mkv:mkv "/output/$TEMPLATE"
+chown mkv:mkv "$DIRECTORY"
 
 # Rip media.
 echo "Ripping..."
