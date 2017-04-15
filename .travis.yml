@@ -1,0 +1,6 @@
+# Configure.
+services: [docker]
+sudo: required
+
+# Run.
+script: docker build . -t robpol86/makemkv
