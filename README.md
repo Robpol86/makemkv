@@ -1,5 +1,8 @@
 # Headless DVD/BD Backups with MakeMKV
 
+[travis]: https://img.shields.io/travis/Robpol86/makemkv/master.svg?style=flat-square&label=Travis%20CI "Build Status"
+[![Build Status][travis]](https://travis-ci.org/Robpol86/makemkv)
+
 Automatically backup your DVD and Bluray discs to local storage. When this Docker image is used together with
 [udev rules](http://www.reactivated.net/writing_udev_rules.html) backups are as easy as inserting discs and then sitting
 back until the drive ejects them. Rinse and repeat.

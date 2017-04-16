@@ -10,7 +10,17 @@ install:
   - sudo add-apt-repository -y ppa:cdemu/ppa && sudo apt-get update
   - sudo apt-get install -y cdemu-client linux-headers-$(uname -r)
   - cdemu load 0 sample.iso
-script:
+before_script:
   - docker build . -t robpol86/makemkv
   - mkdir /tmp/MakeMKV
   - docker run -it --device=/dev/cdrom -e MKV_GID=$(id -g) -e MKV_UID=$(id -u) -v /tmp/MakeMKV:/output robpol86/makemkv
+script:
+  # Verify no extra files remain.
+  - test $(find /tmp/MakeMKV -print |tee /dev/stderr |wc -l) -eq 3
+  - test $(ls -l /tmp/MakeMKV/Sample_2017-04-15-15-16-14-00_???/title00.mkv |tee /dev/stderr |wc -l) -eq 1
+  - MKV=$(ls /tmp/MakeMKV/Sample_2017-04-15-15-16-14-00_???/title00.mkv |tee /dev/stderr)
+  # Verify mkv file stat.
+  - test "$(stat -c %u $MKV |tee /dev/stderr)" == "$UID"
+  - test "$(stat -c %g $MKV |tee /dev/stderr)" == "$(id -g)"
+  - test "$(stat -c %a $MKV |tee /dev/stderr)" == 644
+  - test "$(stat -c %s $MKV |tee /dev/stderr)" == 17345216
