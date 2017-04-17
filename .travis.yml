@@ -7,8 +7,10 @@ before_install:
   - sudo tee /etc/udev/rules.d/85-vhba.rules <<< 'KERNEL=="vhba_ctl", MODE="0660", GROUP="travis"'
   - eval $(dbus-launch --sh-syntax)
 install:
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg |sudo apt-key add -
+  - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
   - sudo add-apt-repository -y ppa:cdemu/ppa && sudo apt-get update
-  - sudo apt-get install -y cdemu-client linux-headers-$(uname -r)
+  - sudo apt-get install -y cdemu-client docker-ce linux-headers-$(uname -r)
 before_script:
   - docker build . -t robpol86/makemkv
 script:
