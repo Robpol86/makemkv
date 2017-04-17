@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Run makemkvcon in headless mode to rip DVDs or Blu-rays.
-# https://github.com/Robpol86/makemkv/blob/master/run.sh
-# Save as (chmod +x): /run.sh
+# https://github.com/Robpol86/makemkv/blob/master/bin/rip.sh
+# Save as (chmod +x): /rip.sh
 
 set -e  # Exit script if a command fails.
 set -u  # Treat unset variables as errors and exit immediately.

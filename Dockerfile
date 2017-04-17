@@ -11,7 +11,7 @@ RUN dnf update -y && \
 
 VOLUME /output
 WORKDIR /output
-COPY run.sh /run.sh
-COPY settings.conf /home/mkv/.MakeMKV/settings.conf
+COPY bin/rip.sh /rip.sh
+COPY etc/settings.conf /home/mkv/.MakeMKV/settings.conf
 
-CMD ["/run.sh"]
+CMD ["/rip.sh"]
