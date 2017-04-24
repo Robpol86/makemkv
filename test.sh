@@ -18,7 +18,8 @@ verify () {
     test "$(stat -c %u ${MKV} |tee /dev/stderr)" == "$UID"
     test "$(stat -c %g ${MKV} |tee /dev/stderr)" == "$(id -g)"
     test "$(stat -c %a ${MKV} |tee /dev/stderr)" == 644
-    test "$(stat -c %s ${MKV} |tee /dev/stderr)" == 17345216
+    test "$(stat -c %s ${MKV} |tee /dev/stderr)" -gt 17345210 # target size: 17345216
+    test "$(stat -c %s ${MKV} |tee /dev/stderr)" -lt 17345220 # target size: 17345216
 }
 
 # Assert failures

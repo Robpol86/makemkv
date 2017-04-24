@@ -1,7 +1,7 @@
 # Headless DVD/BD Backups with MakeMKV
 
-[travis]: https://img.shields.io/travis/Robpol86/makemkv/master.svg?style=flat-square&label=Travis%20CI "Build Status"
-[![Build Status][travis]](https://travis-ci.org/Robpol86/makemkv)
+[circleci]: https://img.shields.io/circleci/project/github/Robpol86/makemkv/master.svg?style=flat-square&label=CircleCI "Build Status"
+[![Build Status][circleci]](https://circleci.com/gh/Robpol86/makemkv)
 
 Automatically backup your DVD and Bluray discs to local storage. When this Docker image is used together with
 [udev rules](http://www.reactivated.net/writing_udev_rules.html) backups are as easy as inserting discs and then sitting
@@ -84,7 +84,7 @@ intact since they're in a volume). Note the udev rule file contents below. You'l
 ```
 # Save as: /etc/udev/rules.d/85-makemkv.rules
 SUBSYSTEM=="block", KERNEL=="sr[0-9]*", ACTION=="change", ENV{ID_FS_TYPE}=="udf", \
-ENV{DEBUG}="true", ENV{MKV_GID}="1000", ENV{MKV_UID}="1000", \
+ENV{DEBUG}="true", ENV{MKV_GID}="1001", ENV{MKV_UID}="1001", \
 RUN+="/bin/bash -c 'docker run -d --rm --device=%E{DEVNAME} --env-file=<(env) \
     -v /tmp/MakeMKV:/output robpol86/makemkv'"
 ```
