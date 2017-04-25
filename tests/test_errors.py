@@ -2,6 +2,7 @@
 
 import subprocess
 
+import py
 import pytest
 
 
@@ -29,3 +30,29 @@ def test_low_space(request, tmpdir):
         pytest.run(['docker', 'run', '-it', '--device=/dev/cdrom',
                     '-v', '{}:/output'.format(output), 'robpol86/makemkv'])
     assert b'Terminating MakeMKV due to low disk space.' in exc.value.output
+
+
+def test_read_error(request, tmpdir):
+    """Test failed rips error handling.
+
+    :param request: pytest fixture.
+    :param py.path.local tmpdir: pytest fixture.
+    """
+    # Create corrupt ISO.
+    iso = tmpdir.join('corrupt.iso')
+    py.path.local(__file__).dirpath().join('sample.iso').copy(iso)
+    with iso.open('rb+') as handle:
+        handle.seek(102400)
+        for _ in range(104857):
+            handle.write(b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+
+    # Load the ISO.
+    pytest.cdload(iso)
+    request.addfinalizer(pytest.cdunload)
+
+    # Docker run.
+    output = tmpdir.ensure_dir('output')
+    with pytest.raises(subprocess.CalledProcessError) as exc:
+        pytest.run(['docker', 'run', '-it', '--device=/dev/cdrom',
+                    '-v', '{}:/output'.format(output), 'robpol86/makemkv'])
+    assert b'Failed to open disc' in exc.value.output

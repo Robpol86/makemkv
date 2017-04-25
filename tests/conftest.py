@@ -47,10 +47,13 @@ def run(command, environ=None, cwd=None, pty_stdin=True):
     return result.stdout, result.stderr
 
 
-def cdload():
-    """Load the ISO into the virtual CD-ROM device."""
+def cdload(path=None):
+    """Load the ISO into the virtual CD-ROM device.
+
+    :param path: File path of ISO file to load if not sample.iso.
+    """
     try:
-        run(['cdemu', 'load', '0', 'sample.iso'])
+        run(['cdemu', 'load', '0', path or 'sample.iso'])
     except subprocess.CalledProcessError as exc:
         if b'AlreadyLoaded' in exc.stderr:
             pass
