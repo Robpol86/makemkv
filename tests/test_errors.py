@@ -1,6 +1,7 @@
 """Test error handling of scripts."""
 
 import subprocess
+from textwrap import dedent
 
 import py
 import pytest
@@ -33,7 +34,7 @@ def test_low_space(request, tmpdir):
 
 
 def test_read_error(request, tmpdir):
-    """Test failed rips error handling.
+    """Test disc opening error handling.
 
     :param request: pytest fixture.
     :param py.path.local tmpdir: pytest fixture.
@@ -43,7 +44,7 @@ def test_read_error(request, tmpdir):
     py.path.local(__file__).dirpath().join('sample.iso').copy(iso)
     with iso.open('rb+') as handle:
         handle.seek(102400)
-        for _ in range(104857):
+        for _ in range(100000):
             handle.write(b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
 
     # Load the ISO.
@@ -56,3 +57,42 @@ def test_read_error(request, tmpdir):
         pytest.run(['docker', 'run', '-it', '--device=/dev/cdrom',
                     '-v', '{}:/output'.format(output), 'robpol86/makemkv'])
     assert b'Failed to open disc' in exc.value.output
+
+
+def test_rip_error(request, tmpdir):
+    """Test failed rips error handling.
+
+    :param request: pytest fixture.
+    :param py.path.local tmpdir: pytest fixture.
+    """
+    # Duplicate ISO.
+    iso = tmpdir.join('duplicate.iso')
+    py.path.local(__file__).dirpath().join('sample.iso').copy(iso)
+
+    # Load the ISO.
+    pytest.cdload(iso)
+    request.addfinalizer(pytest.cdunload)
+
+    # Create abrupt zeroing script.
+    script = tmpdir.join('script.sh')
+    script.write(dedent("""\
+        #!/bin/bash
+        ISO="$2"
+        abrupt_zero () {
+            local ret=0
+            sed -u "/Analyzing seamless segments/q5" || ret=$?
+            [ ${ret} -ne 5 ] && return
+            echo "ZEROING OUT ISO FILE"
+            dd bs=4096 seek=177 count=1 if=/dev/zero of="$ISO"
+            sync
+            cat
+        }
+        docker run -it --device=/dev/cdrom -v $1:/output robpol86/makemkv |abrupt_zero
+        exit ${PIPESTATUS[0]}
+        """))
+
+    # Run.
+    output = tmpdir.ensure_dir('output')
+    with pytest.raises(subprocess.CalledProcessError) as exc:
+        pytest.run(['bash', script, output, iso])
+    assert b'ERROR: One or more titles failed.' in exc.value.output
