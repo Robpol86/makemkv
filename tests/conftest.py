@@ -55,9 +55,8 @@ def cdload(path=None):
     try:
         run(['cdemu', 'load', '0', path or 'sample.iso'])
     except subprocess.CalledProcessError as exc:
-        if b'AlreadyLoaded' in exc.stderr:
-            pass
-        raise
+        if b'AlreadyLoaded' not in exc.stderr:
+            raise
 
     for _ in range(10):
         if os.path.exists('/dev/cdrom'):

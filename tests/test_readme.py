@@ -81,12 +81,23 @@ def test_udev(request):
     request.addfinalizer(write_udev)  # Truncate.
 
     # Run.
+    old_cids = set(pytest.run(['docker', 'ps', '-aqf', 'ancestor=robpol86/makemkv'])[0].splitlines())
+    current_cids = set()
     if OUTPUT.check() and OUTPUT.listdir():
         OUTPUT.remove()
     OUTPUT.ensure_dir()
     pytest.cdload()
     for _ in range(30):
-        if list(OUTPUT.visit(fil='Sample_2017-04-15-15-16-14-00_???/title00.mkv')):
+        current_cids = set(pytest.run(['docker', 'ps', '-aqf', 'ancestor=robpol86/makemkv'])[0].splitlines())
+        if current_cids - old_cids:
+            break
+        time.sleep(0.1)
+    assert len(current_cids - old_cids) == 1
+    cid = next(iter(current_cids - old_cids)).decode('utf8')
+
+    # Wait up to 15 seconds for container to exit.
+    for _ in range(30):
+        if not pytest.run(['docker', 'ps', '-qf', 'id={}'.format(cid)])[0]:
             break
         time.sleep(0.5)
 

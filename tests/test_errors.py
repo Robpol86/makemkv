@@ -1,10 +1,13 @@
 """Test error handling of scripts."""
 
+import os
+import pty
 import subprocess
-from textwrap import dedent
 
 import py
 import pytest
+
+HERE = os.path.dirname(__file__)
 
 
 @pytest.mark.usefixtures('cdemu')
@@ -16,9 +19,8 @@ def test_low_space(request, tmpdir):
     """
     # Create a 5 MiB filesystem container.
     fs_bin = tmpdir.join('fs.bin')
-    with fs_bin.open('wb') as handle:
-        for _ in range(524288):
-            handle.write(b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+    with fs_bin.open('w') as handle:
+        handle.truncate(1024 * 1024 * 5)
     pytest.run(['mkfs.ext4', '-F', fs_bin], pty_stdin=False)
 
     # Mount the filesystem.
@@ -27,9 +29,9 @@ def test_low_space(request, tmpdir):
     request.addfinalizer(lambda: pytest.run(['sudo', 'umount', output], pty_stdin=False))
 
     # Docker run.
+    command = ['docker', 'run', '-it', '--device=/dev/cdrom', '-v', '{}:/output'.format(output), 'robpol86/makemkv']
     with pytest.raises(subprocess.CalledProcessError) as exc:
-        pytest.run(['docker', 'run', '-it', '--device=/dev/cdrom',
-                    '-v', '{}:/output'.format(output), 'robpol86/makemkv'])
+        pytest.run(command)
     assert b'Terminating MakeMKV due to low disk space.' in exc.value.output
 
 
@@ -39,13 +41,11 @@ def test_read_error(request, tmpdir):
     :param request: pytest fixture.
     :param py.path.local tmpdir: pytest fixture.
     """
-    # Create corrupt ISO.
-    iso = tmpdir.join('corrupt.iso')
+    # Create truncated ISO.
+    iso = tmpdir.join('truncated.iso')
     py.path.local(__file__).dirpath().join('sample.iso').copy(iso)
     with iso.open('rb+') as handle:
-        handle.seek(102400)
-        for _ in range(100000):
-            handle.write(b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+        handle.truncate(1024000)
 
     # Load the ISO.
     pytest.cdload(iso)
@@ -53,9 +53,9 @@ def test_read_error(request, tmpdir):
 
     # Docker run.
     output = tmpdir.ensure_dir('output')
+    command = ['docker', 'run', '-it', '--device=/dev/cdrom', '-v', '{}:/output'.format(output), 'robpol86/makemkv']
     with pytest.raises(subprocess.CalledProcessError) as exc:
-        pytest.run(['docker', 'run', '-it', '--device=/dev/cdrom',
-                    '-v', '{}:/output'.format(output), 'robpol86/makemkv'])
+        pytest.run(command)
     assert b'Failed to open disc' in exc.value.output
 
 
@@ -66,33 +66,31 @@ def test_rip_error(request, tmpdir):
     :param py.path.local tmpdir: pytest fixture.
     """
     # Duplicate ISO.
-    iso = tmpdir.join('duplicate.iso')
+    iso = tmpdir.join('truncated.iso')
     py.path.local(__file__).dirpath().join('sample.iso').copy(iso)
 
     # Load the ISO.
     pytest.cdload(iso)
     request.addfinalizer(pytest.cdunload)
 
-    # Create abrupt zeroing script.
-    script = tmpdir.join('script.sh')
-    script.write(dedent("""\
-        #!/bin/bash
-        ISO="$2"
-        abrupt_zero () {
-            local ret=0
-            sed -u "/Analyzing seamless segments/q5" || ret=$?
-            [ ${ret} -ne 5 ] && return
-            echo "ZEROING OUT ISO FILE"
-            dd bs=4096 seek=177 count=1 if=/dev/zero of="$ISO"
-            sync
-            cat
-        }
-        docker run -it --device=/dev/cdrom -v $1:/output robpol86/makemkv |abrupt_zero
-        exit ${PIPESTATUS[0]}
-        """))
-
-    # Run.
+    # Execute.
     output = tmpdir.ensure_dir('output')
-    with pytest.raises(subprocess.CalledProcessError) as exc:
-        pytest.run(['bash', script, output, iso])
-    assert b'ERROR: One or more titles failed.' in exc.value.output
+    command = ['docker', 'run', '-it', '--device=/dev/cdrom', '-v', '{}:/output'.format(output), 'robpol86/makemkv']
+    master, slave = pty.openpty()
+    request.addfinalizer(lambda: [os.close(master), os.close(slave)])
+    proc = subprocess.Popen(command, bufsize=1, cwd=HERE, stderr=subprocess.STDOUT, stdin=slave, stdout=subprocess.PIPE)
+
+    # Read output.
+    caught = False
+    while proc.poll() is None or proc.stdout.peek(1):
+        for line in proc.stdout:
+            # Watch for specific line, then truncate ISO.
+            if b'Analyzing seamless segments' in line:
+                iso.open('w').close()
+            elif b'ERROR: One or more titles failed.' in line:
+                caught = True
+            print(line)  # Write to stdout, pytest will print if test fails.
+
+    # Verify.
+    assert proc.poll() > 0
+    assert caught is True
