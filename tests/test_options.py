@@ -1,5 +1,6 @@
 """Test options exposed to users."""
 
+import py
 import pytest
 
 
@@ -17,7 +18,7 @@ def test_debug(tmpdir, debug):
     elif debug is False:
         args = ['-e', 'DEBUG=false']
     else:
-        args = []
+        args = list()
 
     # Docker run.
     stdout, stderr = pytest.run(args=args, output=output)
@@ -54,7 +55,7 @@ def test_no_eject(tmpdir, no_eject):
     elif no_eject is False:
         args = ['-e', 'NO_EJECT=false']
     else:
-        args = []
+        args = list()
 
     # Docker run.
     stdout, stderr = pytest.run(args=args, output=output)
@@ -66,3 +67,36 @@ def test_no_eject(tmpdir, no_eject):
         assert b'\nEjecting...' in stdout
     assert b'\nCurrent operation: Scanning CD-ROM devices' in stdout
     assert b'\nDone after 00:00:' in stdout
+
+
+@pytest.mark.parametrize('gid', [-1, 0, 1000, 1234])
+@pytest.mark.parametrize('uid', [-1, 0, 1000, 1234])
+@pytest.mark.usefixtures('cdemu')
+def test_ownership(tmpdir, gid, uid):
+    """Test user and group IDs of directories and MKV files. 1000 is the default ID in the container.
+
+    :param py.path.local tmpdir: pytest fixture.
+    :param int gid: Set MKV_GID to this if not -1, otherwise don't set.
+    :param int uid: Set MKV_UID to this if not -1, otherwise don't set.
+    """
+    output = tmpdir.ensure_dir('output')
+    args = list()
+    if gid >= 0:
+        args += ['-e', 'MKV_GID={}'.format(gid)]
+    if uid >= 0:
+        args += ['-e', 'MKV_UID={}'.format(uid)]
+
+    # Docker run.
+    pytest.run(args=args, output=output)
+
+    # Verify.
+    directory = list(output.visit(fil='Sample_2017-04-15-15-16-14-00_???', ignore=py.error.EACCES))[0]
+    assert directory.isdir()
+    directory_stat = directory.stat()
+    assert directory_stat.gid == (1234 if gid == 1234 else 1000)
+    assert directory_stat.uid == (1234 if uid == 1234 else 1000)
+    mkv = directory.join('title00.mkv')
+    stdout = pytest.run(['sudo', 'stat', '-c', '%F %g %u', mkv])[0].strip()
+    assert stdout.rsplit(b' ', 2)[0] == b'regular file'
+    assert stdout.rsplit(b' ', 2)[1] == (b'1234' if gid == 1234 else b'1000')
+    assert stdout.rsplit(b' ', 2)[2] == (b'1234' if uid == 1234 else b'1000')

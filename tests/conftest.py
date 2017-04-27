@@ -66,10 +66,10 @@ def cdload(path=None):
         if b'AlreadyLoaded' not in exc.stderr:
             raise
 
-    for _ in range(10):
+    for _ in range(50):
         if os.path.exists('/dev/cdrom'):
             return
-        time.sleep(0.5)
+        time.sleep(0.1)
     if not os.path.exists('/dev/cdrom'):
         raise IOError('Failed to load cdemu device!')
 
@@ -78,10 +78,10 @@ def cdunload():
     """Eject the ISO from the virtual CD-ROM device."""
     for _ in range(3):
         run(['cdemu', 'unload', '0'])
-        for _ in range(10):
+        for _ in range(50):
             if not os.path.exists('/dev/cdrom'):
                 return
-            time.sleep(0.5)
+            time.sleep(0.1)
     if os.path.exists('/dev/cdrom'):
         raise IOError('Failed to unload cdemu device!')
 
