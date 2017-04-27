@@ -12,12 +12,14 @@ HERE = os.path.dirname(__file__)
 ROOT = os.path.abspath(os.path.join(HERE, '..'))
 
 
-def run(command, environ=None, cwd=None, pty_stdin=True):
+def run(command=None, args=None, output=None, environ=None, cwd=None, pty_stdin=True):
     """Run a command and return the output. Supports string and py.path paths.
 
     :raise CalledProcessError: Command exits non-zero.
 
     :param iter command: Command to run.
+    :param iter args: List of command line arguments to insert to command.
+    :param str output: Path to bind mount to /output when `command` is None.
     :param dict environ: Environment variables to set/override in the command.
     :param str cwd: Current working directory. Default is tests directory.
     :param bool pty_stdin: Spawn a fake pty in memory to please Docker.
@@ -25,6 +27,12 @@ def run(command, environ=None, cwd=None, pty_stdin=True):
     :return: Command stdout and stderr output.
     :rtype: tuple
     """
+    if command is None:
+        assert output is not None
+        command = ['docker', 'run', '--device=/dev/cdrom', '-v', '{}:/output'.format(output), 'robpol86/makemkv']
+    if args:
+        command = command[:-1] + list(args) + command[-1:]
+
     env = os.environ.copy()
     if environ:
         env.update(environ)

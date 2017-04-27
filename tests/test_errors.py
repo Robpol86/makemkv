@@ -29,10 +29,9 @@ def test_low_space(request, tmpdir):
     request.addfinalizer(lambda: pytest.run(['sudo', 'umount', output], pty_stdin=False))
 
     # Docker run.
-    command = ['docker', 'run', '-it', '--device=/dev/cdrom', '-v', '{}:/output'.format(output), 'robpol86/makemkv']
     with pytest.raises(subprocess.CalledProcessError) as exc:
-        pytest.run(command)
-    assert b'Terminating MakeMKV due to low disk space.' in exc.value.output
+        pytest.run(output=output)
+    assert b'Terminating MakeMKV due to low disk space.' in exc.value.stderr
 
 
 def test_read_error(request, tmpdir):
@@ -53,9 +52,8 @@ def test_read_error(request, tmpdir):
 
     # Docker run.
     output = tmpdir.ensure_dir('output')
-    command = ['docker', 'run', '-it', '--device=/dev/cdrom', '-v', '{}:/output'.format(output), 'robpol86/makemkv']
     with pytest.raises(subprocess.CalledProcessError) as exc:
-        pytest.run(command)
+        pytest.run(output=output)
     assert b'Failed to open disc' in exc.value.output
 
 
@@ -75,7 +73,7 @@ def test_rip_error(request, tmpdir):
 
     # Execute.
     output = tmpdir.ensure_dir('output')
-    command = ['docker', 'run', '-it', '--device=/dev/cdrom', '-v', '{}:/output'.format(output), 'robpol86/makemkv']
+    command = ['docker', 'run', '--device=/dev/cdrom', '-v', '{}:/output'.format(output), 'robpol86/makemkv']
     master, slave = pty.openpty()
     request.addfinalizer(lambda: [os.close(master), os.close(slave)])
     proc = subprocess.Popen(command, bufsize=1, cwd=HERE, stderr=subprocess.STDOUT, stdin=slave, stdout=subprocess.PIPE)
