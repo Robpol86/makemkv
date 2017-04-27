@@ -1,6 +1,7 @@
 """Test options exposed to users."""
 
-import py
+import getpass
+
 import pytest
 
 
@@ -88,15 +89,16 @@ def test_ownership(tmpdir, gid, uid):
 
     # Docker run.
     pytest.run(args=args, output=output)
+    pytest.run(['sudo', 'setfacl', '-Rm', 'u:{}:rX'.format(getpass.getuser()), output], pty_stdin=False)
 
     # Verify.
-    directory = list(output.visit(fil='Sample_2017-04-15-15-16-14-00_???', ignore=py.error.EACCES))[0]
+    directory = list(output.visit(fil='Sample_2017-04-15-15-16-14-00_???'))[0]
     assert directory.isdir()
     directory_stat = directory.stat()
     assert directory_stat.gid == (1234 if gid == 1234 else 1000)
     assert directory_stat.uid == (1234 if uid == 1234 else 1000)
     mkv = directory.join('title00.mkv')
-    stdout = pytest.run(['sudo', 'stat', '-c', '%F %g %u', mkv])[0].strip()
-    assert stdout.rsplit(b' ', 2)[0] == b'regular file'
-    assert stdout.rsplit(b' ', 2)[1] == (b'1234' if gid == 1234 else b'1000')
-    assert stdout.rsplit(b' ', 2)[2] == (b'1234' if uid == 1234 else b'1000')
+    mkv_stat = mkv.stat()
+    assert mkv_stat.isfile()
+    assert mkv_stat.gid == (1234 if gid == 1234 else 1000)
+    assert mkv_stat.uid == (1234 if uid == 1234 else 1000)
