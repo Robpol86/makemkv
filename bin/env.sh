@@ -29,8 +29,8 @@ fi
 
 # Get disc label/UUID if not run through udev rule.
 if [ -n "$DEVNAME" ] && [ -b "$DEVNAME" ]; then
-    if [ -z "$ID_FS_LABEL" ]; then ID_FS_LABEL=$(blkid -o value -s LABEL "$DEVNAME"); fi
-    if [ -z "$ID_FS_UUID" ]; then ID_FS_UUID=$(blkid -o value -s UUID "$DEVNAME"); fi
+    if [ -z "$ID_FS_LABEL" ]; then ID_FS_LABEL=$(blkid -o value -s LABEL "$DEVNAME" || true); fi
+    if [ -z "$ID_FS_UUID" ]; then ID_FS_UUID=$(blkid -o value -s UUID "$DEVNAME" || true); fi
 fi
 
 # Prepare the environment before ripping.

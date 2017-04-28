@@ -19,7 +19,7 @@ fi
 
 # Verify the device.
 if [ -z "$DEVNAME" ]; then
-    echo -e "\nERROR: Unable to find optical device to eject.\n" >&2
+    echo -e "\nERROR: Unable to find optical device.\n" >&2
     exit 1
 fi
 if [ ! -b "$DEVNAME" ]; then

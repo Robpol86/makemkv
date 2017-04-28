@@ -92,3 +92,38 @@ def test_rip_error(request, tmpdir):
     # Verify.
     assert proc.poll() > 0
     assert caught is True
+
+
+def test_no_disc(tmpdir):
+    """Test no disc in device handling.
+
+    :param py.path.local tmpdir: pytest fixture.
+    """
+    output = tmpdir.ensure_dir('output')
+    pytest.cdunload()
+
+    with pytest.raises(subprocess.CalledProcessError) as exc:
+        pytest.run(['docker', 'run', '--device=/dev/sr0', '-v', '{}:/output'.format(output), 'robpol86/makemkv'])
+    assert b'Failed to open disc' in exc.value.output
+
+
+@pytest.mark.parametrize('devname', ['', '/dev/dne', '/dev/does not exist'])
+def test_no_device(tmpdir, devname):
+    """Test no optical device handling.
+
+    :param py.path.local tmpdir: pytest fixture.
+    :param str devname: Set DEVNAME to this if truthy.
+    """
+    output = tmpdir.ensure_dir('output')
+    command = ['docker', 'run', '-v', '{}:/output'.format(output), 'robpol86/makemkv']
+    if devname:
+        command = command[:-1] + ['-e', 'DEVNAME={}'.format(devname)] + command[-1:]
+
+    with pytest.raises(subprocess.CalledProcessError) as exc:
+        pytest.run(command)
+    assert not list(output.visit())
+
+    if devname:
+        assert b'Device %s not a block-special file.' % devname.encode('utf8') in exc.value.stderr
+    else:
+        assert b'ERROR: Unable to find optical device.' in exc.value.stderr
