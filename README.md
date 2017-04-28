@@ -15,11 +15,16 @@ or other formats. Ripped Blurays may take up around **40 GB** or so in my experi
 Below are the available environment variables you may use to configure this Docker image:
 
 * **DEBUG** Enables debug output if set to "true".
+* **DEVNAME** The path to the optical device (e.g. `/dev/cdrom`).
 * **MKV_GID** The group ID of the `mkv` user inside the container.
 * **MKV_UID** The user ID of the `mkv` user inside the container.
 * **NO_EJECT** Disables ejecting the disc if set to "true".
 
-And below are the available volumes used by the Docker image:
+By default **DEVNAME** is automatically detected. If you use the Docker `--privileged` flag (not needed nor recommended)
+and have more than one optical device on your system this automated detection may not work. In these cases you'd want to
+explicitly specify the path to the desired optical device.
+
+Below are the available volumes used by the Docker image:
 
 * **/output** Ripped MKV files are written to this directory inside the container.
 

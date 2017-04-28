@@ -8,10 +8,8 @@ set -e  # Exit script if a command fails.
 set -u  # Treat unset variables as errors and exit immediately.
 set -o pipefail  # Exit script if pipes fail instead of just the last program.
 
-declare -i MKV_GID=${MKV_GID:-0}
-declare -i MKV_UID=${MKV_UID:-0}
-declare -l DEBUG=${DEBUG:-} && [ "$DEBUG" == "true" ] || DEBUG=
-declare -l NO_EJECT=${NO_EJECT:-} && [ "$NO_EJECT" == "true" ] || NO_EJECT=
+# Source function library.
+source /env.sh
 
 # Print environment.
 if [ "$DEBUG" == "true" ]; then
@@ -19,84 +17,33 @@ if [ "$DEBUG" == "true" ]; then
     env |sort
 fi
 
-# Kill makemkvcon when not enough disk space. It keeps going no matter what.
-low_space_term () {
-    local ret=0
-    sed -u "/much as [0-9]\+ megabytes while there are only/q5" || ret=$?
-    [ ${ret} -ne 5 ] && return
-    echo -e "\nERROR: Terminating MakeMKV due to low disk space.\n" >&2
-    sync
-    kill 0
-}
-
-# Exit 1 if any title failed to rip.
-catch_failed () {
-    local ret=0
-    sed -u "/Copy complete. [0-9]\+ titles saved, [0-9]\+ failed./q5" || ret=$?
-    [ ${ret} -ne 5 ] && return
-    echo -e "\nERROR: One or more titles failed.\n" >&2
-    sync
-    exit 1
-}
-
-# Detect the device.
-device=
-for d in /dev/cdrom /dev/sr[0-9]*; do
-    if [ -b "$d" ]; then
-        device="$d"
-        break
-    fi
-done
-if [ -z "$device" ]; then
+# Verify the device.
+if [ -z "$DEVNAME" ]; then
     echo -e "\nERROR: Unable to find optical device to eject.\n" >&2
     exit 1
 fi
-
-# Update UID and GID of "mkv" user at runtime.
-if [ "$MKV_UID" -ne "0" ] && [ "$MKV_UID" -ne "$(id -u mkv)" ]; then
-    usermod -ou "$MKV_UID" mkv
-fi
-if [ "$MKV_GID" -ne "0" ] && [ "$MKV_GID" -ne "$(id -g mkv)" ]; then
-    groupmod -og "$MKV_GID" mkv
+if [ ! -b "$DEVNAME" ]; then
+    echo -e "\nERROR: Device $DEVNAME not a block-special file.\n" >&2
+    exit 1
 fi
 
-# Add the "mkv" user to a group that can work on the device.
-device_group=$(stat -c "%G" "$device")
-if [ "$device_group" = "UNKNOWN" ]; then
-    device_gid=$(stat -c "%g" "$device")
-    device_group=cdrom_docker
-    groupadd --gid "$device_gid" "$device_group"
-fi
-usermod -a -G "$device_group" mkv
-
-# Determine DVD name.
-ID_FS_LABEL=${ID_FS_LABEL:-$(blkid -o value -s LABEL)}
-ID_FS_UUID=${ID_FS_UUID:-$(blkid -o value -s UUID)}
-TEMPLATE="${ID_FS_LABEL:-nolabel}_${ID_FS_UUID:-nouuid}_XXX"
-
-# Determine destination directory.
-DIRECTORY=$(mktemp -d "/output/$TEMPLATE")
-chown mkv:mkv "$DIRECTORY"
-
-# Determine directory to use while the rip is incoming.
-INCOMING_DIR="$DIRECTORY/.rip"
-mkdir -p "$INCOMING_DIR"
-chown mkv:mkv "$INCOMING_DIR"
+# Prepare the environment before ripping.
+prepare
 
 # Rip media.
 echo "Ripping..."
-sudo -u mkv makemkvcon mkv --progress -same --directio true disc:0 all "$INCOMING_DIR" \
+sudo -u mkv makemkvcon mkv --progress -same --directio true "dev:$DEVNAME" all "$DIR_WORKING" \
     |low_space_term \
     |catch_failed
 
 # Move media from incoming directory to movie directory.
-sudo -u mkv mv "$INCOMING_DIR/"* "$DIRECTORY/"
-sudo -u mkv rmdir "$INCOMING_DIR"
+sudo -u mkv mv "$DIR_WORKING/"* "$DIR_FINAL/"
+sudo -u mkv rmdir "$DIR_WORKING"
 
 # Eject.
 if [ "$NO_EJECT" != "true" ]; then
     echo "Ejecting..."
-    eject ${DEBUG:+--verbose} "$device"
+    eject ${DEBUG:+--verbose} "$DEVNAME"
 fi
 
-echo Done after $(date -u -d @$SECONDS +%T) with $(basename "$DIRECTORY")
+echo Done after $(date -u -d @$SECONDS +%T) with $(basename "$DIR_FINAL")
