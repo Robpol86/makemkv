@@ -21,12 +21,12 @@ def test_low_space(request, tmpdir):
     fs_bin = tmpdir.join('fs.bin')
     with fs_bin.open('w') as handle:
         handle.truncate(1024 * 1024 * 5)
-    pytest.run(['mkfs.ext4', '-F', fs_bin], pty_stdin=False)
+    pytest.run(['mkfs.ext4', '-F', fs_bin])
 
     # Mount the filesystem.
     output = tmpdir.ensure_dir('output')
-    pytest.run(['sudo', 'mount', '-t', 'ext4', '-o', 'loop', fs_bin, output], pty_stdin=False)
-    request.addfinalizer(lambda: pytest.run(['sudo', 'umount', output], pty_stdin=False))
+    pytest.run(['sudo', 'mount', '-t', 'ext4', '-o', 'loop', fs_bin, output])
+    request.addfinalizer(lambda: pytest.run(['sudo', 'umount', output]))
 
     # Docker run.
     with pytest.raises(subprocess.CalledProcessError) as exc:

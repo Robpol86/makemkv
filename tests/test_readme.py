@@ -2,29 +2,12 @@
 
 import os
 import re
-import stat
 import time
 
 import py
 import pytest
 
 OUTPUT = py.path.local('/tmp/MakeMKV')
-
-
-def verify():
-    """Verify the output directory after test runs in this module."""
-    # Verify tree.
-    tree = sorted(OUTPUT.visit(), key=str)
-    assert len(tree) == 2
-    assert tree[0].fnmatch('/tmp/MakeMKV/Sample_2017-04-15-15-16-14-00_???')
-    assert tree[1].fnmatch('/tmp/MakeMKV/Sample_2017-04-15-15-16-14-00_???/title00.mkv')
-
-    # Verify file attributes.
-    mkv_stat = tree[1].stat()
-    assert mkv_stat.uid == os.getuid()
-    assert mkv_stat.gid == os.getgid()
-    assert 17345210 < mkv_stat.size < 17345220  # Target size is 17345216. May deviate a byte or two.
-    assert stat.filemode(mkv_stat.mode) == '-rw-r--r--'
 
 
 def write_udev(contents=''):
@@ -34,7 +17,7 @@ def write_udev(contents=''):
     """
     script = py.path.local('/etc/udev/rules.d/85-makemkv.rules')
     script.write(contents)
-    pytest.run(['sudo', 'udevadm', 'control', '--reload'], pty_stdin=False)
+    pytest.run(['sudo', 'udevadm', 'control', '--reload'])
 
 
 @pytest.mark.usefixtures('cdemu')
@@ -60,7 +43,7 @@ def test_manual(tmpdir):
     assert OUTPUT.check()
 
     # Verify.
-    verify()
+    pytest.verify(OUTPUT, gid=os.getgid(), uid=os.getuid(), modes=('drwx------', '-rw-r--r--'))
 
 
 def test_udev(request):
@@ -81,19 +64,13 @@ def test_udev(request):
     request.addfinalizer(write_udev)  # Truncate.
 
     # Run.
-    old_cids = set(pytest.run(['docker', 'ps', '-aqf', 'ancestor=robpol86/makemkv'])[0].splitlines())
-    current_cids = set()
-    if OUTPUT.check() and OUTPUT.listdir():
-        OUTPUT.remove()
-    OUTPUT.ensure_dir()
-    pytest.cdload()
-    for _ in range(30):
-        current_cids = set(pytest.run(['docker', 'ps', '-aqf', 'ancestor=robpol86/makemkv'])[0].splitlines())
-        if current_cids - old_cids:
-            break
-        time.sleep(0.1)
-    assert len(current_cids - old_cids) == 1
-    cid = next(iter(current_cids - old_cids)).decode('utf8')
+    with pytest.container_ids_diff() as container_ids:
+        if OUTPUT.check() and OUTPUT.listdir():
+            OUTPUT.remove()
+        OUTPUT.ensure_dir()
+        pytest.cdload()
+    assert len(container_ids) == 1
+    cid = container_ids[0]
 
     # Wait up to 15 seconds for container to exit.
     for _ in range(30):
@@ -102,4 +79,4 @@ def test_udev(request):
         time.sleep(0.5)
 
     # Verify.
-    verify()
+    pytest.verify(OUTPUT, gid=os.getgid(), uid=os.getuid(), modes=('drwx------', '-rw-r--r--'))
