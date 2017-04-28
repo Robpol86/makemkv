@@ -1,9 +1,9 @@
 """pytest fixtures."""
 
 import contextlib
+import fnmatch
 import os
 import pty
-import stat
 import subprocess
 import time
 
@@ -111,37 +111,47 @@ def container_ids_diff():
 
 
 def verify(output, gid=None, uid=None, modes=None):
-    """Verify the output directory after test runs in this module.
+    """Verify the output directory using sudo.
 
     :param py.path.local output: Root output directory.
     :param int gid: Verify owner group ID of files.
     :param int uid: Verify owner user ID of files.
     :param iter modes: Verify mode of (directory, file).
-
-    :return: Stat object of MKV file.
     """
-    tree = sorted(output.visit(), key=str)
+    stdout, stderr = run(['sudo', 'find', output, '-mindepth', '1', '-printf', r'%M %U %G %s %P\n'])
+    assert not stderr
+
+    tree = list()
+    for cols in (l.split(b' ', 4) for l in stdout.splitlines()):
+        tree.append(dict(
+            mode=cols[0].decode('utf8'),
+            uid=int(cols[1]),
+            gid=int(cols[2]),
+            size=int(cols[3]),
+            relpath=cols[4],
+        ))
+
+    # Verify directory tree.
     assert len(tree) == 2
-    assert tree[0].fnmatch('Sample_2017-04-15-15-16-14-00_???')
-    assert tree[1].fnmatch('Sample_2017-04-15-15-16-14-00_???/title00.mkv')
+    assert fnmatch.fnmatch(tree[0]['relpath'], b'Sample_2017-04-15-15-16-14-00_???')
+    assert fnmatch.fnmatch(tree[1]['relpath'], b'Sample_2017-04-15-15-16-14-00_???/title00.mkv')
 
-    dir_stat = tree[0].stat()
+    # Verify subdirectory.
     if gid is not None:
-        assert dir_stat.gid == gid
+        assert tree[0]['gid'] == gid
     if uid is not None:
-        assert dir_stat.uid == uid
+        assert tree[0]['uid'] == uid
     if modes is not None:
-        assert stat.filemode(dir_stat.mode) == modes[0]
+        assert tree[0]['mode'] == modes[0]
 
-    mkv_stat = tree[1].stat()
-    assert 17345210 < mkv_stat.size < 17345220  # Target size is 17345216. May deviate a byte or two.
+    # Verify MKV file.
+    assert 17345210 < tree[1]['size'] < 17345220  # Target size is 17345216. May deviate a byte or two.
     if gid is not None:
-        assert mkv_stat.gid == gid
+        assert tree[1]['gid'] == gid
     if uid is not None:
-        assert mkv_stat.uid == uid
+        assert tree[1]['uid'] == uid
     if modes is not None:
-        assert stat.filemode(mkv_stat.mode) == modes[1]
-    return mkv_stat
+        assert tree[1]['mode'] == modes[1]
 
 
 def pytest_namespace():
