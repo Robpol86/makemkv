@@ -7,7 +7,6 @@ declare -xl DEBUG=${DEBUG:-}
 declare -xl NO_EJECT=${NO_EJECT:-}
 export DEVNAME=${DEVNAME:-}
 export DIR_FINAL=
-export DIR_TEMPLATE=
 export DIR_WORKING=
 export ID_FS_LABEL=${ID_FS_LABEL:-}
 export ID_FS_UUID=${ID_FS_UUID:-}
@@ -49,8 +48,7 @@ prepare () {
     fi
 
     # Determine directory name.
-    DIR_TEMPLATE="${ID_FS_LABEL:-nolabel}_${ID_FS_UUID:-nouuid}_XXX"
-    DIR_FINAL=$(mktemp -d "/output/$DIR_TEMPLATE")
+    DIR_FINAL=$(mktemp -d "/output/${ID_FS_LABEL:-nolabel}_${ID_FS_UUID:-nouuid}_XXX")
     DIR_WORKING="$DIR_FINAL/.rip"
     mkdir "$DIR_WORKING"
     chown -R mkv:mkv "$DIR_FINAL"
