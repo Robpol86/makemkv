@@ -73,7 +73,8 @@ def test_rip_error(request, tmpdir):
 
     # Execute.
     output = tmpdir.ensure_dir('output')
-    command = ['docker', 'run', '--device=/dev/cdrom', '-v', '{}:/output'.format(output), 'robpol86/makemkv']
+    command = ['docker', 'run', '--device=/dev/cdrom', '-v', '{}:/output'.format(output), '-e', 'DEBUG=true',
+               'robpol86/makemkv']
     master, slave = pty.openpty()
     request.addfinalizer(lambda: [os.close(master), os.close(slave)])
     proc = subprocess.Popen(command, bufsize=1, cwd=HERE, stderr=subprocess.STDOUT, stdin=slave, stdout=subprocess.PIPE)
@@ -100,10 +101,12 @@ def test_no_disc(tmpdir):
     :param py.path.local tmpdir: pytest fixture.
     """
     output = tmpdir.ensure_dir('output')
+    command = ['docker', 'run', '--device=/dev/sr0', '-v', '{}:/output'.format(output), '-e', 'DEBUG=true',
+               'robpol86/makemkv']
     pytest.cdunload()
 
     with pytest.raises(subprocess.CalledProcessError) as exc:
-        pytest.run(['docker', 'run', '--device=/dev/sr0', '-v', '{}:/output'.format(output), 'robpol86/makemkv'])
+        pytest.run(command)
     assert b'Failed to open disc' in exc.value.output
 
 
@@ -115,7 +118,7 @@ def test_no_device(tmpdir, devname):
     :param str devname: Set DEVNAME to this if truthy.
     """
     output = tmpdir.ensure_dir('output')
-    command = ['docker', 'run', '-v', '{}:/output'.format(output), 'robpol86/makemkv']
+    command = ['docker', 'run', '-v', '{}:/output'.format(output), '-e', 'DEBUG=true', 'robpol86/makemkv']
     if devname:
         command = command[:-1] + ['-e', 'DEVNAME={}'.format(devname)] + command[-1:]
 

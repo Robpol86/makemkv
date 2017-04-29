@@ -52,15 +52,14 @@ def test_debug(tmpdir, debug):
     :param bool debug: Set environment variable to 'true', 'false', or don't set.
     """
     output = tmpdir.ensure_dir('output')
+    command = ['docker', 'run', '--device=/dev/cdrom', '-v', '{}:/output'.format(output), 'robpol86/makemkv']
     if debug is True:
-        args = ['-e', 'DEBUG=true']
+        command = command[:-1] + ['-e', 'DEBUG=true'] + command[-1:]
     elif debug is False:
-        args = ['-e', 'DEBUG=false']
-    else:
-        args = list()
+        command = command[:-1] + ['-e', 'DEBUG=false'] + command[-1:]
 
     # Docker run.
-    stdout, stderr = pytest.run(args=args, output=output)
+    stdout, stderr = pytest.run(command)
 
     # Verify.
     if debug is True:

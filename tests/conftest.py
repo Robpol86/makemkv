@@ -30,7 +30,8 @@ def run(command=None, args=None, output=None, environ=None, cwd=None):
     """
     if command is None:
         assert output is not None
-        command = ['docker', 'run', '--device=/dev/cdrom', '-v', '{}:/output'.format(output), 'robpol86/makemkv']
+        command = ['docker', 'run', '--device=/dev/cdrom', '-v', '{}:/output'.format(output), '-e', 'DEBUG=true',
+                   'robpol86/makemkv']
     if args:
         command = command[:-1] + list(args) + command[-1:]
 
