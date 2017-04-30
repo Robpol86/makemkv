@@ -29,14 +29,14 @@ def test_volume(tmpdir, volume):
 
     # Verify.
     if volume == 'bind':
-        pytest.verify(output, gid=1000, uid=1000, modes=('drwx------', '-rw-r--r--'))
+        pytest.verify(output, gid=1000, uid=1000, modes=('drwxr-xr-x', '-rw-r--r--'))
     elif volume == 'data':
         stdout = pytest.run(['docker', 'inspect', cid])[0]
         parsed = json.loads(stdout)
         mount = parsed[0]['Mounts'][0]
         assert mount['Destination'] == '/output'
         output = py.path.local(mount['Source'])
-        pytest.verify(output, gid=1000, uid=1000, modes=('drwx------', '-rw-r--r--'))
+        pytest.verify(output, gid=1000, uid=1000, modes=('drwxr-xr-x', '-rw-r--r--'))
     elif volume == 'unspecified':
         pass
     else:

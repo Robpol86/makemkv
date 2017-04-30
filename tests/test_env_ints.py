@@ -25,3 +25,28 @@ def test_ownership(tmpdir, gid, uid):
 
     # Verify.
     pytest.verify(output, gid=1234 if gid == 1234 else 1000, uid=1234 if uid == 1234 else 1000)
+
+
+@pytest.mark.parametrize('umask', ['', '0002', '0022', '0000'])
+@pytest.mark.usefixtures('cdemu')
+def test_umask(tmpdir, umask):
+    """Test UMASK environment variable.
+
+    :param py.path.local tmpdir: pytest fixture.
+    :param str umask: Set UMASK to this if truthy.
+    """
+    output = tmpdir.ensure_dir('output')
+    args = list()
+    if umask:
+        args += ['-e', 'UMASK={}'.format(umask)]
+
+    # Docker run.
+    pytest.run(args=args, output=output)
+
+    # Verify.
+    if umask == '0002':
+        pytest.verify(output, modes=('drwxrwxr-x', '-rw-rw-r--'))
+    elif umask == '0000':
+        pytest.verify(output, modes=('drwxrwxrwx', '-rw-rw-rw-'))
+    else:
+        pytest.verify(output, modes=('drwxr-xr-x', '-rw-r--r--'))

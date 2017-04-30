@@ -32,7 +32,8 @@ prepare
 
 # Rip media.
 echo "Ripping..."
-sudo -u mkv makemkvcon mkv ${DEBUG:+--debug} --progress -same --directio true "dev:$DEVNAME" all "$DIR_WORKING" \
+sudo -u mkv LD_PRELOAD=/force_umask.so makemkvcon mkv ${DEBUG:+--debug} --progress -same --directio true \
+    "dev:$DEVNAME" all "$DIR_WORKING" \
     |low_space_term \
     |catch_failed
 

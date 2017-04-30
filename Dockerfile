@@ -14,5 +14,6 @@ WORKDIR /output
 COPY bin/env.sh /env.sh
 COPY bin/rip.sh /rip.sh
 COPY etc/settings.conf /home/mkv/.MakeMKV/settings.conf
+COPY lib/force_umask.so /force_umask.so
 
 CMD ["/rip.sh"]

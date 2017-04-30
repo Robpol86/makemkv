@@ -43,7 +43,7 @@ def test_manual(tmpdir):
     assert OUTPUT.check()
 
     # Verify.
-    pytest.verify(OUTPUT, gid=os.getgid(), uid=os.getuid(), modes=('drwx------', '-rw-r--r--'))
+    pytest.verify(OUTPUT, gid=os.getgid(), uid=os.getuid(), modes=('drwxr-xr-x', '-rw-r--r--'))
 
 
 def test_udev(request):
@@ -79,4 +79,4 @@ def test_udev(request):
         time.sleep(0.5)
 
     # Verify.
-    pytest.verify(OUTPUT, gid=os.getgid(), uid=os.getuid(), modes=('drwx------', '-rw-r--r--'))
+    pytest.verify(OUTPUT, gid=os.getgid(), uid=os.getuid(), modes=('drwxr-xr-x', '-rw-r--r--'))

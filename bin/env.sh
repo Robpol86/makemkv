@@ -10,6 +10,7 @@ export DIR_FINAL=
 export DIR_WORKING=
 export ID_FS_LABEL=${ID_FS_LABEL:-}
 export ID_FS_UUID=${ID_FS_UUID:-}
+export UMASK=${UMASK:-$(umask)}
 
 # Set false booleans to null for fancy bash tricks in rip.sh.
 if [ "$DEBUG" != "true" ]; then DEBUG=; fi
@@ -47,11 +48,15 @@ prepare () {
         groupmod -o --gid "$(stat -c %g "$DEVNAME")" cdrom
     fi
 
-    # Determine directory name.
+    # Set umask.
+    umask "$UMASK"
+    EDITOR='tee -a' visudo <<< "Defaults umask = $UMASK"
+
+    # Determine destination directory and set its permissions.
     DIR_FINAL=$(mktemp -d "/output/${ID_FS_LABEL:-nolabel}_${ID_FS_UUID:-nouuid}_XXX")
+    chown mkv:mkv "$DIR_FINAL"
     DIR_WORKING="$DIR_FINAL/.rip"
-    mkdir "$DIR_WORKING"
-    chown -R mkv:mkv "$DIR_FINAL"
+    sudo -u mkv mkdir "$DIR_WORKING" && chmod $(stat -c %a "$_") "$DIR_FINAL"
 }
 
 # Kill makemkvcon when not enough disk space. It keeps going no matter what.
