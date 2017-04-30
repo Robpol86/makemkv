@@ -61,16 +61,35 @@ def run(command=None, args=None, output=None, environ=None, cwd=None):
     return result.stdout, result.stderr
 
 
+def cdstatus():
+    """Return the file path to the loaded ISO or None if nothing is loaded.
+
+    :return: Path to loaded ISO.
+    :rtype: str
+    """
+    stdout = run(['cdemu', 'status'])[0]
+    for columns in (l.split() for l in stdout.splitlines()):
+        if columns[:2] == [b'0', b'True']:
+            return columns[2].decode('utf8')
+    return None
+
+
 def cdload(path=None):
     """Load the ISO into the virtual CD-ROM device.
 
     :param path: File path of ISO file to load if not sample.iso.
     """
+    path = path or 'sample.iso'
+
     try:
-        run(['cdemu', 'load', '0', path or 'sample.iso'])
+        run(['cdemu', 'load', '0', path])
     except subprocess.CalledProcessError as exc:
         if b'AlreadyLoaded' not in exc.stderr:
             raise
+        loaded = cdstatus()
+        if not loaded or os.path.realpath(loaded) != os.path.realpath(path):
+            cdunload()
+            return cdload(path)
 
     for _ in range(50):
         if os.path.exists('/dev/cdrom'):
@@ -173,7 +192,5 @@ def pytest_namespace():
 
 @pytest.fixture
 def cdemu():
-    """Load sample.iso before running test function, then unload."""
+    """Load sample.iso before running test function."""
     cdload()
-    yield
-    cdunload()
