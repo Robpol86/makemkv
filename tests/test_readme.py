@@ -51,8 +51,6 @@ def test_udev(request):
 
     :param request: pytest fixture.
     """
-    request.addfinalizer(pytest.cdunload)
-
     # Grab udev rule from README.
     with pytest.ROOT.join('README.md').open() as handle:
         for line in handle:

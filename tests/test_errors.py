@@ -34,10 +34,9 @@ def test_low_space(request, tmpdir):
     assert b'Terminating MakeMKV due to low disk space.' in exc.value.stderr
 
 
-def test_read_error(request, tmpdir):
+def test_read_error(tmpdir):
     """Test disc opening error handling.
 
-    :param request: pytest fixture.
     :param py.path.local tmpdir: pytest fixture.
     """
     # Create truncated ISO.
@@ -48,7 +47,6 @@ def test_read_error(request, tmpdir):
 
     # Load the ISO.
     pytest.cdload(iso)
-    request.addfinalizer(pytest.cdunload)
 
     # Docker run.
     output = tmpdir.ensure_dir('output')
@@ -69,7 +67,6 @@ def test_rip_error(request, tmpdir):
 
     # Load the ISO.
     pytest.cdload(iso)
-    request.addfinalizer(pytest.cdunload)
 
     # Execute.
     output = tmpdir.ensure_dir('output')
