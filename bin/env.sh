@@ -4,6 +4,7 @@
 declare -xi MKV_GID=${MKV_GID:-0}
 declare -xi MKV_UID=${MKV_UID:-0}
 declare -xl DEBUG=${DEBUG:-}
+declare -xl FAILED_EJECT=${FAILED_EJECT:-}
 declare -xl NO_EJECT=${NO_EJECT:-}
 export DEVNAME=${DEVNAME:-}
 export DIR_FINAL=
@@ -14,6 +15,7 @@ export UMASK=${UMASK:-$(umask)}
 
 # Set false booleans to null for fancy bash tricks in rip.sh.
 if [ "$DEBUG" != "true" ]; then DEBUG=; fi
+if [ "$FAILED_EJECT" != "true" ]; then FAILED_EJECT=; fi
 if [ "$NO_EJECT" != "true" ]; then NO_EJECT=; fi
 
 # Detect the device.
@@ -32,6 +34,18 @@ if [ -n "$DEVNAME" ] && [ -b "$DEVNAME" ]; then
     if [ -z "$ID_FS_LABEL" ]; then ID_FS_LABEL=$(blkid -o value -s LABEL "$DEVNAME" || true); fi
     if [ -z "$ID_FS_UUID" ]; then ID_FS_UUID=$(blkid -o value -s UUID "$DEVNAME" || true); fi
 fi
+
+# Handle FAILED_EJECT.
+failed_eject () {
+    # Touch failed file.
+    if [ -d "$DIR_FINAL" ]; then
+        touch "$DIR_FINAL/failed"
+    fi
+
+    # Eject
+    echo "Ejecting due to failure..."
+    eject ${DEBUG:+--verbose} "$DEVNAME"
+}
 
 # Prepare the environment before ripping.
 prepare () {

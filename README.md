@@ -16,6 +16,7 @@ Below are the available environment variables you may use to configure this Dock
 
 * **DEBUG** Enables debug output if set to "true".
 * **DEVNAME** The path to the optical device (e.g. `/dev/cdrom`).
+* **FAILED_EJECT** Eject the disc even when ripping fails.
 * **MKV_GID** The group ID of the `mkv` user inside the container.
 * **MKV_UID** The user ID of the `mkv` user inside the container.
 * **NO_EJECT** Disables ejecting the disc if set to "true".

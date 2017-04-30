@@ -4,6 +4,7 @@
 # https://github.com/Robpol86/makemkv/blob/master/bin/rip.sh
 # Save as (chmod +x): /rip.sh
 
+set -E  # CalL ERR traps when using -e.
 set -e  # Exit script if a command fails.
 set -u  # Treat unset variables as errors and exit immediately.
 set -o pipefail  # Exit script if pipes fail instead of just the last program.
@@ -25,6 +26,11 @@ fi
 if [ ! -b "$DEVNAME" ]; then
     echo -e "\nERROR: Device $DEVNAME not a block-special file.\n" >&2
     exit 1
+fi
+
+# Setup trap for FAILED_EJECT.
+if [ "$NO_EJECT" != "true" ] && [ "$FAILED_EJECT" == "true" ]; then
+    trap failed_eject ERR
 fi
 
 # Prepare the environment before ripping.
