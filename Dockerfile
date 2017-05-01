@@ -1,7 +1,7 @@
 FROM frolvlad/alpine-glibc
 MAINTAINER Robpol86 <robpol86@gmail.com>
 
-RUN apk add --no-cache bash expat ffmpeg-libs libc6-compat libressl-dev libstdc++ sudo && \
+RUN apk add --no-cache bash expat ffmpeg-libs libressl-dev libstdc++ sudo && \
     ln -s /lib/libcrypto.so.38 /lib/libcrypto.so.10 && \
     adduser -Ds /sbin/nologin mkv && \
     addgroup mkv cdrom && \
