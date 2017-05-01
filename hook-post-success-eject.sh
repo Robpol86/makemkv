@@ -6,7 +6,7 @@
 DIR_ORIGINAL=${DIR_FINAL}/.original
 DIR_WORKING=${DIR_FINAL}/.working
 
-mkdir "$DIR_ORIGINAL" "$DIR_WORKING"
+sudo -u mkv mkdir "$DIR_ORIGINAL" "$DIR_WORKING"
 
 for src_file in "$DIR_FINAL"/*.mkv; do
     filename=$(basename "$src_file")
@@ -15,3 +15,5 @@ for src_file in "$DIR_FINAL"/*.mkv; do
     sudo -u mkv mv "$src_file" "$DIR_ORIGINAL"
     sudo -u mkv mv "$dst_file" "$DIR_FINAL"
 done
+
+sudo -u mkv rmdir "$DIR_WORKING"
