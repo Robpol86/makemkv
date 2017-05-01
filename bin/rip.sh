@@ -28,10 +28,8 @@ if [ ! -b "$DEVNAME" ]; then
     exit 1
 fi
 
-# Setup trap for FAILED_EJECT.
-if [ "$NO_EJECT" != "true" ] && [ "$FAILED_EJECT" == "true" ]; then
-    trap failed_eject ERR
-fi
+# Setup trap for hooks and FAILED_EJECT.
+trap on_err ERR
 
 # Prepare the environment before ripping.
 prepare

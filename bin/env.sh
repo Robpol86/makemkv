@@ -35,16 +35,18 @@ if [ -n "$DEVNAME" ] && [ -b "$DEVNAME" ]; then
     if [ -z "$ID_FS_UUID" ]; then ID_FS_UUID=$(blkid -o value -s UUID "$DEVNAME" || true); fi
 fi
 
-# Handle FAILED_EJECT.
-failed_eject () {
+# Called when something errors out.
+on_err () {
     # Touch failed file.
     if [ -d "$DIR_FINAL" ]; then
         touch "$DIR_FINAL/failed"
     fi
 
     # Eject
-    echo "Ejecting due to failure..."
-    eject ${DEBUG:+--verbose} "$DEVNAME"
+    if [ "$NO_EJECT" != "true" ] && [ "$FAILED_EJECT" == "true" ]; then
+        echo "Ejecting due to failure..."
+        eject ${DEBUG:+--verbose} "$DEVNAME"
+    fi
 }
 
 # Prepare the environment before ripping.

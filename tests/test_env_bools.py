@@ -8,14 +8,12 @@ import pytest
 
 @pytest.mark.parametrize('debug', [None, False, True])
 @pytest.mark.usefixtures('cdemu')
-def test_debug(tmpdir, debug):
+def test_debug(debug):
     """Test DEBUG environment variable.
 
-    :param py.path.local tmpdir: pytest fixture.
     :param bool debug: Set environment variable to 'true', 'false', or don't set.
     """
-    output = tmpdir.ensure_dir('output')
-    command = ['docker', 'run', '--device=/dev/cdrom', '-v', '{}:/output'.format(output), 'robpol86/makemkv']
+    command = ['docker', 'run', '--device=/dev/cdrom', 'robpol86/makemkv']
     if debug is True:
         command = command[:-1] + ['-e', 'DEBUG=true'] + command[-1:]
     elif debug is False:
@@ -69,24 +67,20 @@ def test_failed_eject(tmpdir, failed_eject):
         pytest.run(args=args, output=output)
 
     # Verify.
-    failed_file = list(output.visit('Sample_2017-04-15-15-16-14-00_???'))[0].join('failed')
     if failed_eject is True:
         assert b'\nEjecting due to failure...' in exc.value.output
-        assert failed_file.check(file=True)
     else:
         assert b'\nEjecting' not in exc.value.output
-        assert not failed_file.check()
+    pytest.verify_failed_file(output)
 
 
 @pytest.mark.parametrize('no_eject', [None, False, True])
 @pytest.mark.usefixtures('cdemu')
-def test_no_eject(tmpdir, no_eject):
+def test_no_eject(no_eject):
     """Test NO_EJECT environment variable.
 
-    :param py.path.local tmpdir: pytest fixture.
     :param bool no_eject: Set environment variable to 'true', 'false', or don't set.
     """
-    output = tmpdir.ensure_dir('output')
     if no_eject is True:
         args = ['-e', 'NO_EJECT=true']
     elif no_eject is False:
@@ -95,7 +89,7 @@ def test_no_eject(tmpdir, no_eject):
         args = list()
 
     # Docker run.
-    stdout, stderr = pytest.run(args=args, output=output)
+    stdout, stderr = pytest.run(args=args)
 
     # Verify.
     if no_eject is True:

@@ -32,6 +32,7 @@ def test_low_space(request, tmpdir):
     with pytest.raises(subprocess.CalledProcessError) as exc:
         pytest.run(output=output)
     assert b'Terminating MakeMKV due to low disk space.' in exc.value.stderr
+    pytest.verify_failed_file(output)
 
 
 def test_read_error(tmpdir):
@@ -53,6 +54,7 @@ def test_read_error(tmpdir):
     with pytest.raises(subprocess.CalledProcessError) as exc:
         pytest.run(output=output)
     assert b'Failed to open disc' in exc.value.output
+    pytest.verify_failed_file(output)
 
 
 def test_rip_error(request, tmpdir):
@@ -90,6 +92,7 @@ def test_rip_error(request, tmpdir):
     # Verify.
     assert proc.poll() > 0
     assert caught is True
+    pytest.verify_failed_file(output)
 
 
 def test_no_disc(tmpdir):

@@ -29,9 +29,9 @@ def run(command=None, args=None, output=None, environ=None, cwd=None):
     :rtype: tuple
     """
     if command is None:
-        assert output is not None
-        command = ['docker', 'run', '--device=/dev/cdrom', '-v', '{}:/output'.format(output), '-e', 'DEBUG=true',
-                   'robpol86/makemkv']
+        command = ['docker', 'run', '--device=/dev/cdrom', '-e', 'DEBUG=true', 'robpol86/makemkv']
+        if output:
+            command = command[:-1] + ['-v', '{}:/output'.format(output)] + command[-1:]
     if args:
         command = command[:-1] + list(args) + command[-1:]
 
@@ -174,6 +174,19 @@ def verify(output, gid=None, uid=None, modes=None):
         assert tree[1]['mode'] == modes[1]
 
 
+def verify_failed_file(output):
+    """Verify presence of "failed" file.
+
+    :param py.path.local output: Root output directory.
+    """
+    stdout, stderr = run(['sudo', 'find', output, '-name', 'failed', '-printf', r'%P\n'])
+    assert not stderr
+
+    tree = stdout.splitlines()
+    assert len(tree) == 1
+    assert fnmatch.fnmatch(tree[0], b'Sample_2017-04-15-15-16-14-00_???/failed')
+
+
 def pytest_namespace():
     """Add objects to the pytest namespace. Can be retrieved by importing pytest and accessing pytest.<name>.
 
@@ -187,6 +200,7 @@ def pytest_namespace():
         ROOT=py.path.local(ROOT),
         run=run,
         verify=verify,
+        verify_failed_file=verify_failed_file,
     )
 
 
