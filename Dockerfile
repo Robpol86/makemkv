@@ -1,10 +1,13 @@
 FROM alpine:latest
 MAINTAINER Robpol86 <robpol86@gmail.com>
 
-RUN apk add --no-cache bash sudo && \
+RUN apk add --no-cache bash libc6-compat libstdc++ sudo && \
     adduser -Ds /sbin/nologin mkv && \
     addgroup mkv cdrom && \
     sudo -u mkv mkdir /home/mkv/.MakeMKV
+
+COPY lib/libdriveio.so.0 /usr/lib64/libdriveio.so.0
+COPY lib/libmakemkv.so.1 /usr/lib64/libmakemkv.so.1
 
 VOLUME /output
 WORKDIR /output
