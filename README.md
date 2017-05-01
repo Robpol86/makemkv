@@ -118,7 +118,7 @@ intact since they're in a volume). Note the udev rule file contents below. You'l
 
 ```
 # Save as: /etc/udev/rules.d/85-makemkv.rules
-SUBSYSTEM=="block", KERNEL=="sr[0-9]*", ACTION=="change", ENV{ID_FS_TYPE}=="udf", \
+SUBSYSTEM=="block", KERNEL=="sr[0-9]*", ACTION=="change", ENV{ID_CDROM_MEDIA}=="1", \
 ENV{DEBUG}="true", ENV{MKV_GID}="1001", ENV{MKV_UID}="1001", \
 RUN+="/bin/bash -c 'docker run -d --rm --device=%E{DEVNAME} --env-file=<(env) \
     -v /tmp/MakeMKV:/output robpol86/makemkv'"
