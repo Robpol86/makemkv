@@ -14,7 +14,7 @@ HERE = os.path.dirname(__file__)
 ROOT = os.path.abspath(os.path.join(HERE, '..'))
 
 
-def run(command=None, args=None, output=None, environ=None, cwd=None):
+def run(command=None, args=None, output=None, image_id=None, environ=None, cwd=None):
     """Run a command and return the output. Supports string and py.path paths.
 
     :raise CalledProcessError: Command exits non-zero.
@@ -22,6 +22,7 @@ def run(command=None, args=None, output=None, environ=None, cwd=None):
     :param iter command: Command to run.
     :param iter args: List of command line arguments to insert to command.
     :param str output: Path to bind mount to /output when `command` is None.
+    :param str image_id: Docker image to use instead of robpol86/makemkv.
     :param dict environ: Environment variables to set/override in the command.
     :param str cwd: Current working directory. Default is tests directory.
 
@@ -29,7 +30,7 @@ def run(command=None, args=None, output=None, environ=None, cwd=None):
     :rtype: tuple
     """
     if command is None:
-        command = ['docker', 'run', '--device=/dev/cdrom', '-e', 'DEBUG=true', 'robpol86/makemkv']
+        command = ['docker', 'run', '--device=/dev/cdrom', '-e', 'DEBUG=true', image_id or 'robpol86/makemkv']
         if output:
             command = command[:-1] + ['-v', '{}:/output'.format(output)] + command[-1:]
     if args:
@@ -208,3 +209,23 @@ def pytest_namespace():
 def cdemu():
     """Load sample.iso before running test function."""
     cdload()
+
+
+@pytest.fixture(scope='session', name='tmpdir_session')
+def _tmpdir_session(request, tmpdir_factory):
+    """A tmpdir fixture for the session scope. Persists throughout the pytest session."""
+    return tmpdir_factory.mktemp(request.session.name)
+
+
+@pytest.fixture
+def cdemu_truncated(tmpdir_session):
+    """Load truncated.iso before running test function.
+
+    :param py.path.local tmpdir_session: conftest fixture.
+    """
+    path = tmpdir_session.join('truncated.iso')
+    if not path.check():
+        py.path.local('sample.iso').copy(path)
+        with path.open('rb+') as handle:
+            handle.truncate(1024000)
+    cdload(path)

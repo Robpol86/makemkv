@@ -11,6 +11,7 @@ set -o pipefail  # Exit script if pipes fail instead of just the last program.
 
 # Source function library.
 source /env.sh
+hook post-env
 
 # Print environment.
 if [ "$DEBUG" == "true" ]; then
@@ -29,17 +30,21 @@ if [ ! -b "$DEVNAME" ]; then
 fi
 
 # Setup trap for hooks and FAILED_EJECT.
-trap on_err ERR
+trap "hook pre-on-err; on_err; hook post-on-err" ERR
 
 # Prepare the environment before ripping.
+hook pre-prepare
 prepare
+hook post-prepare
 
 # Rip media.
 echo "Ripping..."
+hook pre-rip
 sudo -u mkv LD_PRELOAD=/force_umask.so makemkvcon mkv ${DEBUG:+--debug} --progress -same --directio true \
     "dev:$DEVNAME" all "$DIR_WORKING" \
     |low_space_term \
     |catch_failed
+hook post-rip
 
 # Move media from incoming directory to movie directory.
 sudo -u mkv mv "$DIR_WORKING/"* "$DIR_FINAL/"
@@ -47,8 +52,11 @@ sudo -u mkv rmdir "$DIR_WORKING"
 
 # Eject.
 if [ "$NO_EJECT" != "true" ]; then
+    hook pre-success-eject
     echo "Ejecting..."
     eject ${DEBUG:+--verbose} "$DEVNAME"
+    hook post-success-eject
 fi
 
+hook end
 echo Done after $(date -u -d @$SECONDS +%T) with $(basename "$DIR_FINAL")

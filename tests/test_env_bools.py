@@ -2,7 +2,6 @@
 
 import subprocess
 
-import py
 import pytest
 
 
@@ -41,6 +40,7 @@ def test_debug(debug):
 
 
 @pytest.mark.parametrize('failed_eject', [None, False, True])
+@pytest.mark.usefixtures('cdemu_truncated')
 def test_failed_eject(tmpdir, failed_eject):
     """Test FAILED_EJECT environment variable.
 
@@ -54,13 +54,6 @@ def test_failed_eject(tmpdir, failed_eject):
         args = ['-e', 'FAILED_EJECT=false']
     else:
         args = list()
-
-    # Create and load a truncated ISO.
-    iso = tmpdir.join('truncated.iso')
-    py.path.local(__file__).dirpath().join('sample.iso').copy(iso)
-    with iso.open('rb+') as handle:
-        handle.truncate(1024000)
-    pytest.cdload(iso)
 
     # Docker run.
     with pytest.raises(subprocess.CalledProcessError) as exc:

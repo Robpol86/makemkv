@@ -35,17 +35,30 @@ if [ -n "$DEVNAME" ] && [ -b "$DEVNAME" ]; then
     if [ -z "$ID_FS_UUID" ]; then ID_FS_UUID=$(blkid -o value -s UUID "$DEVNAME" || true); fi
 fi
 
+# Source hook script if available.
+hook () {
+    local path="/hook-$1.sh"
+    if [ -s "$path" ]; then
+        source "$path"
+    fi
+}
+
 # Called when something errors out.
 on_err () {
     # Touch failed file.
     if [ -d "$DIR_FINAL" ]; then
-        touch "$DIR_FINAL/failed"
+        local touch_failed="$DIR_FINAL/failed"
+        hook pre-on-err-touch
+        touch "$touch_failed"
+        hook post-on-err-touch
     fi
 
     # Eject
     if [ "$NO_EJECT" != "true" ] && [ "$FAILED_EJECT" == "true" ]; then
+        hook pre-failed-eject
         echo "Ejecting due to failure..."
         eject ${DEBUG:+--verbose} "$DEVNAME"
+        hook post-failed-eject
     fi
 }
 

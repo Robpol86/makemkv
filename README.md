@@ -16,7 +16,7 @@ Below are the available environment variables you may use to configure this Dock
 
 * **DEBUG** Enables debug output if set to "true".
 * **DEVNAME** The path to the optical device (e.g. `/dev/cdrom`).
-* **FAILED_EJECT** Eject the disc even when ripping fails.
+* **FAILED_EJECT** Eject the disc even when ripping fails if set to "true".
 * **MKV_GID** The group ID of the `mkv` user inside the container.
 * **MKV_UID** The user ID of the `mkv` user inside the container.
 * **NO_EJECT** Disables ejecting the disc if set to "true".
@@ -29,6 +29,34 @@ explicitly specify the path to the desired optical device.
 Below are the available volumes used by the Docker image:
 
 * **/output** Ripped MKV files are written to this directory inside the container.
+
+## Hooks
+
+This image exposes a few hooks you can use to add or alter functionality of most of the ripping process. An example use
+case is to encode ripped files with ffmpeg after a successful rip. All hook files should be copied **to the root of the
+image** and be named `hook-*.sh`. They'll be sourced by the main script so you'll have access to all of the environment
+variables in your hook scripts.
+
+* **/hook-post-env.sh** The start of the main script after defining some env variables.
+* **/hook-pre-on-err.sh** When something fails `on_err` is called. This hook is fired before the call.
+* **/hook-post-on-err.sh** Fired after `on_err` is called.
+* **/hook-pre-prepare.sh** Before `prepare` is called, which finishes initializing the environment.
+* **/hook-post-prepare.sh** After `prepare` is called.
+* **/hook-pre-rip.sh** Before makemkvcon is executed.
+* **/hook-post-rip.sh** After makemkvcon successfully exits.
+* **/hook-end.sh** At the end of the main script after a successful run of makemkvcon.
+
+The following hooks are only fired when `NO_EJECT!=true` and when makemkvcon successfully exits:
+
+* **/hook-pre-success-eject.sh** Before the disc is ejected.
+* **/hook-post-success-eject.sh** After the disc is ejected.
+
+The following hooks are only fired when an error occurs:
+
+* **/hook-pre-on-err-touch.sh** If the final directory is created before touching the `failed` file.
+* **/hook-post-on-err-touch.sh** After touching the `failed` file.
+* **/hook-pre-failed-eject.sh** When `NO_EJECT!=true` and `FAILED_EJECT==true` before the disc is ejected.
+* **/hook-post-failed-eject.sh** When `NO_EJECT!=true` and `FAILED_EJECT==true` after the disc is ejected.
 
 ## Run Manually
 

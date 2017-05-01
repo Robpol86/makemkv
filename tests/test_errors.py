@@ -35,21 +35,12 @@ def test_low_space(request, tmpdir):
     pytest.verify_failed_file(output)
 
 
+@pytest.mark.usefixtures('cdemu_truncated')
 def test_read_error(tmpdir):
     """Test disc opening error handling.
 
     :param py.path.local tmpdir: pytest fixture.
     """
-    # Create truncated ISO.
-    iso = tmpdir.join('truncated.iso')
-    py.path.local(__file__).dirpath().join('sample.iso').copy(iso)
-    with iso.open('rb+') as handle:
-        handle.truncate(1024000)
-
-    # Load the ISO.
-    pytest.cdload(iso)
-
-    # Docker run.
     output = tmpdir.ensure_dir('output')
     with pytest.raises(subprocess.CalledProcessError) as exc:
         pytest.run(output=output)
