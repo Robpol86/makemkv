@@ -21,8 +21,8 @@ udev
 .. code-block:: bash
 
     sudo tee /etc/udev/rules.d/85-makemkv.rules << EOF
-    SUBSYSTEM=="block", KERNEL=="sr[0-9]*", ACTION=="change", ENV{ID_CDROM_MEDIA}=="1", \
-    ENV{DEBUG}="true", ENV{UMASK}="0002", ENV{MKV_GID}="$(id -g media)", ENV{MKV_UID}="$(id -u media)", \
-    RUN+="/bin/bash -c 'docker run -d --rm --device=%E{DEVNAME} --env-file=<(env) \
+    SUBSYSTEM=="block", KERNEL=="sr[0-9]*", ACTION=="change", ENV{ID_CDROM_MEDIA}=="1", \\
+    ENV{DEBUG}="true", ENV{UMASK}="0002", ENV{MKV_GID}="$(id -g media)", ENV{MKV_UID}="$(id -u media)", \\
+    RUN+="/bin/bash -c 'docker run -d --rm --device=%E{DEVNAME} --env-file=<(env) \\
         --log-opt tag=makemkv -v /storage/Local/MakeMKV:/output makemkv'"
     EOF
