@@ -171,7 +171,7 @@ def test_wait_background_fail(tmpdir, fail):
             '    echo do_wait fired!\n'
             '    return {}\n'
             '}}\n'
-            'do_wait &\n'
+            '(do_wait || kill 0) &\n'
         ).format(int(fail)))
 
     # Docker run.
