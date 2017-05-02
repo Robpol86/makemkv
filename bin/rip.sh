@@ -30,7 +30,7 @@ if [ ! -b "$DEVNAME" ]; then
 fi
 
 # Setup trap for hooks and FAILED_EJECT.
-trap "hook pre-on-err; on_err; hook post-on-err; wait" ERR
+trap "hook pre-on-err; on_err; hook post-on-err; wait |grep Done" ERR
 
 # Prepare the environment before ripping.
 hook pre-prepare
@@ -56,5 +56,5 @@ if [ "$NO_EJECT" != "true" ]; then
 fi
 
 hook end
-wait
+wait |grep Done
 echo Done after $(date -u -d @$SECONDS +%T) with $(basename "$DIR_FINAL")
