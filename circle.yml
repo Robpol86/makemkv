@@ -9,16 +9,6 @@ jobs:
       - checkout
 
       - run:
-        name: Build Shared Object
-        command: |
-          cd lib
-          gcc -o force_umask.so force_umask.c -fPIC -shared
-          git diff --no-ext-diff --quiet --exit-code force_umask.so || cp -v force_umask.so ~/
-
-      - store_artifacts:
-        path: ~/force_umask.so
-
-      - run:
         name: Install Test Dependencies
         background: true
         command: |
