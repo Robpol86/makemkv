@@ -42,7 +42,7 @@ def test_success(tmpdir):
 
     :param py.path.local tmpdir: pytest fixture.
     """
-    hooks = ('post-env', 'pre-prepare', 'post-prepare', 'pre-rip', 'post-rip', 'end')
+    hooks = ('post-env', 'pre-prepare', 'post-prepare', 'pre-rip', 'post-title', 'post-rip', 'end')
     with build_image(tmpdir.join('root')) as (root, _, image_ids):
         for hook in hooks:
             root.ensure('hook-{}.sh'.format(hook)).write('env |sort')
