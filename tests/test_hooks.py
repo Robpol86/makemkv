@@ -27,7 +27,7 @@ def build_image(root):
 
     # Append to Dockerfile.
     for path in (p for p in root.listdir() if p.isfile() and p.basename != 'Dockerfile'):
-        docker_file.write('COPY {0} /{0}\n'.format(path.basename), 'a')
+        docker_file.write('COPY {} /\n'.format(path.basename), 'a')
 
     # Build.
     stdout = pytest.run(['docker', 'build', '.'], cwd=root)[0]

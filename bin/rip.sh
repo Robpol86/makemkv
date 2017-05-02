@@ -4,7 +4,7 @@
 # https://github.com/Robpol86/makemkv/blob/master/bin/rip.sh
 # Save as (chmod +x): /rip.sh
 
-set -E  # CalL ERR traps when using -e.
+set -E  # Call ERR traps when using -e.
 set -e  # Exit script if a command fails.
 set -u  # Treat unset variables as errors and exit immediately.
 set -o pipefail  # Exit script if pipes fail instead of just the last program.
