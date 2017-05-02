@@ -53,10 +53,10 @@ def test_success(tmpdir):
 
     # Verify.
     for hook in hooks:
-        assert b'\nFIRING HOOK: /hook-%s.sh' % hook.encode('utf8') in stderr
-        assert b'\n_HOOK_SCRIPT=/hook-%s.sh' % hook.encode('utf8') in stdout
-        assert b'\nEND OF HOOK: /hook-%s.sh' % hook.encode('utf8') in stderr
-    assert stderr.count(b'\nFIRING HOOK: ') == len(hooks)  # Verify no other hooks fired.
+        assert b'FIRING HOOK: /hook-%s.sh' % hook.encode('utf8') in stderr
+        assert b'_HOOK_SCRIPT=/hook-%s.sh' % hook.encode('utf8') in stdout
+        assert b'END OF HOOK: /hook-%s.sh' % hook.encode('utf8') in stderr
+    assert stderr.count(b'\nEND OF HOOK: ') == len(hooks)  # Verify no other hooks fired.
     pytest.verify(output)
 
 
@@ -81,7 +81,7 @@ def test_failed(tmpdir):
         assert b'\nFIRING HOOK: /hook-%s.sh' % hook.encode('utf8') in stderr
         assert b'\n_HOOK_SCRIPT=/hook-%s.sh' % hook.encode('utf8') in stdout
         assert b'\nEND OF HOOK: /hook-%s.sh' % hook.encode('utf8') in stderr
-    assert stderr.count(b'\nFIRING HOOK: ') == len(hooks)  # Verify no other hooks fired.
+    assert stderr.count(b'\nEND OF HOOK: ') == len(hooks)  # Verify no other hooks fired.
 
 
 @pytest.mark.parametrize('fail', [False, True])

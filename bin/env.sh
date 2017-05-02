@@ -35,17 +35,20 @@ if [ -n "$DEVNAME" ] && [ -b "$DEVNAME" ]; then
     if [ -z "$ID_FS_UUID" ]; then ID_FS_UUID=$(blkid -o value -s UUID "$DEVNAME" || true); fi
 fi
 
+# Write debug statements to stderr.
+debug () {
+    if [ "$DEBUG" == "true" ]; then
+        echo $@ >&2
+    fi
+}
+
 # Source hook script if available.
 hook () {
     local -x _HOOK_SCRIPT="/hook-$1.sh"
     if [ -s "$_HOOK_SCRIPT" ]; then
-        if [ "$DEBUG" == "true" ]; then
-            echo -e "\nFIRING HOOK: $_HOOK_SCRIPT\n" >&2
-        fi
+        debug "FIRING HOOK: $_HOOK_SCRIPT"
         source "$_HOOK_SCRIPT"
-        if [ "$DEBUG" == "true" ]; then
-            echo -e "\nEND OF HOOK: $_HOOK_SCRIPT\n" >&2
-        fi
+        debug "END OF HOOK: $_HOOK_SCRIPT"
     fi
 }
 

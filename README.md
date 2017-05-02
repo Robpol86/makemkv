@@ -8,7 +8,8 @@ Automatically backup your DVD and Bluray discs to local storage. When this Docke
 back until the drive ejects them. Rinse and repeat.
 
 Note that this Docker image only decrypts and rips to MKV files. It does not transcode/convert files into smaller sizes
-or other formats. Ripped Blurays may take up around **40 GB** or so in my experience.
+or other formats (this can be accomplished using hook scripts, more info below). Ripped Blurays may take up around
+**40 GB** or so in my experience.
 
 ## Variables and Volumes
 
@@ -57,6 +58,9 @@ The following hooks are only fired when an error occurs:
 * **/hook-post-on-err-touch.sh** After touching the `failed` file.
 * **/hook-pre-failed-eject.sh** When `NO_EJECT!=true` and `FAILED_EJECT==true` before the disc is ejected.
 * **/hook-post-failed-eject.sh** When `NO_EJECT!=true` and `FAILED_EJECT==true` after the disc is ejected.
+
+An example of hook scripts used with MakeMKV can be found in my orphaned branch here:
+https://github.com/Robpol86/makemkv/tree/robpol86
 
 ## Run Manually
 
