@@ -37,9 +37,15 @@ fi
 
 # Source hook script if available.
 hook () {
-    local path="/hook-$1.sh"
-    if [ -s "$path" ]; then
-        source "$path"
+    local -x _HOOK_SCRIPT="/hook-$1.sh"
+    if [ -s "$_HOOK_SCRIPT" ]; then
+        if [ "$DEBUG" == "true" ]; then
+            echo -e "\nFIRING HOOK: $_HOOK_SCRIPT\n" >&2
+        fi
+        source "$_HOOK_SCRIPT"
+        if [ "$DEBUG" == "true" ]; then
+            echo -e "\nEND OF HOOK: $_HOOK_SCRIPT\n" >&2
+        fi
     fi
 }
 
@@ -47,9 +53,9 @@ hook () {
 on_err () {
     # Touch failed file.
     if [ -d "$DIR_FINAL" ]; then
-        local touch_failed="$DIR_FINAL/failed"
+        local -x _FAILED_FILE="$DIR_FINAL/failed"
         hook pre-on-err-touch
-        touch "$touch_failed"
+        sudo -u mkv touch "$_FAILED_FILE"
         hook post-on-err-touch
     fi
 

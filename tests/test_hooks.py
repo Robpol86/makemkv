@@ -13,17 +13,17 @@ def build_image(root):
 
     :param py.path.local root: Root directory of files to copy.
 
-    :return: Same root variable and Docker image ID in a list.
+    :return: Same root variable, Dockerfile path, and Docker image ID in a list.
     :rtype: iter
     """
     images = list()
-    yield root, images
 
     # Create Dockerfile.
-    docker_file = root.join('Dockerfile')
-    if not docker_file.check():
-        docker_file.write('FROM robpol86/makemkv\n')
-    docker_file.write('\n', 'a')
+    docker_file = root.ensure('Dockerfile')
+    docker_file.write('FROM robpol86/makemkv\n')
+
+    # Let caller add files or modify Dockerfile.
+    yield root, docker_file, images
 
     # Append to Dockerfile.
     for path in (p for p in root.listdir() if p.isfile() and p.basename != 'Dockerfile'):
@@ -43,18 +43,20 @@ def test_success(tmpdir):
     :param py.path.local tmpdir: pytest fixture.
     """
     hooks = ('post-env', 'pre-prepare', 'post-prepare', 'pre-rip', 'post-rip', 'end')
-    with build_image(tmpdir.join('root')) as (root, image_ids):
+    with build_image(tmpdir.join('root')) as (root, _, image_ids):
         for hook in hooks:
-            root.join('hook-{}.sh'.format(hook)).write('echo HOOK FIRED: {}\n'.format(hook.upper()), ensure=True)
+            root.ensure('hook-{}.sh'.format(hook)).write('env |sort')
 
     # Docker run.
     output = tmpdir.ensure_dir('output')
-    stdout = pytest.run(output=output, image_id=image_ids[0])[0]
+    stdout, stderr = pytest.run(output=output, image_id=image_ids[0])
 
     # Verify.
     for hook in hooks:
-        assert hook.upper().encode('utf8') in stdout
-    assert stdout.count(b'HOOK FIRED: ') == len(hooks)  # Verify no other hooks fired.
+        assert b'\nFIRING HOOK: /hook-%s.sh' % hook.encode('utf8') in stderr
+        assert b'\n_HOOK_SCRIPT=/hook-%s.sh' % hook.encode('utf8') in stdout
+        assert b'\nEND OF HOOK: /hook-%s.sh' % hook.encode('utf8') in stderr
+    assert stderr.count(b'\nFIRING HOOK: ') == len(hooks)  # Verify no other hooks fired.
     pytest.verify(output)
 
 
@@ -65,78 +67,57 @@ def test_failed(tmpdir):
     :param py.path.local tmpdir: pytest fixture.
     """
     hooks = ('pre-on-err', 'post-on-err', 'pre-on-err-touch', 'post-on-err-touch')
-    with build_image(tmpdir.join('root')) as (root, image_ids):
+    with build_image(tmpdir.join('root')) as (root, _, image_ids):
         for hook in hooks:
-            root.join('hook-{}.sh'.format(hook)).write('echo HOOK FIRED: {}\n'.format(hook.upper()), ensure=True)
+            root.ensure('hook-{}.sh'.format(hook)).write('env |sort')
 
     # Docker run.
     with pytest.raises(subprocess.CalledProcessError) as exc:
         pytest.run(image_id=image_ids[0])
-    stdout = exc.value.output
+    stdout, stderr = exc.value.output, exc.value.stderr
 
     # Verify.
     for hook in hooks:
-        assert hook.upper().encode('utf8') in stdout
-    assert stdout.count(b'HOOK FIRED: ') == len(hooks)  # Verify no other hooks fired.
+        assert b'\nFIRING HOOK: /hook-%s.sh' % hook.encode('utf8') in stderr
+        assert b'\n_HOOK_SCRIPT=/hook-%s.sh' % hook.encode('utf8') in stdout
+        assert b'\nEND OF HOOK: /hook-%s.sh' % hook.encode('utf8') in stderr
+    assert stderr.count(b'\nFIRING HOOK: ') == len(hooks)  # Verify no other hooks fired.
 
 
+@pytest.mark.parametrize('fail', [False, True])
 @pytest.mark.parametrize('no_eject', [False, True])
 @pytest.mark.usefixtures('cdemu')
-def test_eject_success(tmpdir, no_eject):
+def test_eject(tmpdir, fail, no_eject):
     """Test post and pre eject hooks.
 
     :param py.path.local tmpdir: pytest fixture.
+    :param bool fail: Cause a failure during the run to trigger failed eject.
     :param bool no_eject: Set environment variable to 'true' or 'false'.
     """
-    hooks = ('pre-success-eject', 'post-success-eject')
-    with build_image(tmpdir.join('root')) as (root, image_ids):
+    hooks = ('pre-success-eject', 'post-success-eject', 'pre-failed-eject', 'post-failed-eject')
+    with build_image(tmpdir.join('root')) as (root, _, image_ids):
         for hook in hooks:
-            root.join('hook-{}.sh'.format(hook)).write('echo HOOK FIRED: {}\n'.format(hook.upper()), ensure=True)
+            root.ensure('hook-{}.sh'.format(hook)).write('echo eject hook fired!')
+        if fail:
+            root.ensure('hook-pre-rip.sh').write('false')
 
     # Docker run.
-    args = ['-e', 'NO_EJECT=true'] if no_eject else None
-    output = tmpdir.ensure_dir('output')
-    stdout = pytest.run(args=args, output=output, image_id=image_ids[0])[0]
+    args = ['-e', 'FAILED_EJECT=true'] + (['-e', 'NO_EJECT=true'] if no_eject else [])
+    if fail:
+        with pytest.raises(subprocess.CalledProcessError) as exc:
+            pytest.run(args=args, image_id=image_ids[0])
+        stdout, stderr = exc.value.output, exc.value.stderr
+    else:
+        stdout, stderr = pytest.run(args=args, image_id=image_ids[0])
 
     # Verify.
     if no_eject:
-        for hook in hooks:
-            assert hook.upper().encode('utf8') not in stdout
-        assert stdout.count(b'HOOK FIRED: ') == 0
+        assert stdout.count(b'eject hook fired!') == 0
     else:
-        for hook in hooks:
-            assert hook.upper().encode('utf8') in stdout
-        assert stdout.count(b'HOOK FIRED: ') == len(hooks)  # Verify no other hooks fired.
-    pytest.verify(output)
-
-
-@pytest.mark.parametrize('failed_eject', [False, True])
-@pytest.mark.usefixtures('cdemu_truncated')
-def test_eject_failed(tmpdir, failed_eject):
-    """Test post and pre eject hooks.
-
-    :param py.path.local tmpdir: pytest fixture.
-    :param bool failed_eject: Set environment variable to 'true' or 'false'.
-    """
-    hooks = ('pre-failed-eject', 'post-failed-eject')
-    with build_image(tmpdir.join('root')) as (root, image_ids):
-        for hook in hooks:
-            root.join('hook-{}.sh'.format(hook)).write('echo HOOK FIRED: {}\n'.format(hook.upper()), ensure=True)
-
-    # Docker run.
-    args = ['-e', 'FAILED_EJECT=true'] if failed_eject else None
-    output = tmpdir.ensure_dir('output')
-    with pytest.raises(subprocess.CalledProcessError) as exc:
-        pytest.run(args=args, output=output, image_id=image_ids[0])
-    stdout = exc.value.output
-
-    # Verify.
-    if failed_eject:
-        for hook in hooks:
-            assert hook.upper().encode('utf8') in stdout
-        assert stdout.count(b'HOOK FIRED: ') == len(hooks)  # Verify no other hooks fired.
-    else:
-        for hook in hooks:
-            assert hook.upper().encode('utf8') not in stdout
-        assert stdout.count(b'HOOK FIRED: ') == 0
-    pytest.verify_failed_file(output)
+        assert stdout.count(b'eject hook fired!') == 2
+        if fail:
+            assert b'\nFIRING HOOK: /hook-pre-failed-eject.sh' in stderr
+            assert b'\nFIRING HOOK: /hook-post-failed-eject.sh' in stderr
+        else:
+            assert b'\nFIRING HOOK: /hook-pre-success-eject.sh' in stderr
+            assert b'\nFIRING HOOK: /hook-post-success-eject.sh' in stderr
