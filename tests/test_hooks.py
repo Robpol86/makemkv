@@ -91,7 +91,7 @@ def test_eject(tmpdir, fail, no_eject):
     """Test post and pre eject hooks.
 
     :param py.path.local tmpdir: pytest fixture.
-    :param bool fail: Cause a failure during the run to trigger failed eject.
+    :param bool fail: Cause a failure during the run.
     :param bool no_eject: Set environment variable to 'true' or 'false'.
     """
     hooks = ('pre-success-eject', 'post-success-eject', 'pre-failed-eject', 'post-failed-eject')
@@ -121,3 +121,35 @@ def test_eject(tmpdir, fail, no_eject):
         else:
             assert b'\nFIRING HOOK: /hook-pre-success-eject.sh' in stderr
             assert b'\nFIRING HOOK: /hook-post-success-eject.sh' in stderr
+
+
+@pytest.mark.parametrize('fail', [False, True])
+@pytest.mark.usefixtures('cdemu')
+def test_wait(tmpdir, fail):
+    """Test waiting for background jobs.
+
+    :param py.path.local tmpdir: pytest fixture.
+    :param bool fail: Cause a failure during the run.
+    """
+    with build_image(tmpdir.join('root')) as (root, _, image_ids):
+        pre_rip = root.ensure('hook-pre-rip.sh')
+        pre_rip.write(
+            'do_wait () {\n'
+            '    sleep 5\n'
+            '    echo do_wait done!\n'
+            '}\n'
+            'do_wait &\n'
+        )
+        if fail:
+            pre_rip.write('false\n', 'a')
+
+    # Docker run.
+    if fail:
+        with pytest.raises(subprocess.CalledProcessError) as exc:
+            pytest.run(image_id=image_ids[0])
+        stdout, stderr = exc.value.output, exc.value.stderr
+    else:
+        stdout, stderr = pytest.run(image_id=image_ids[0])
+
+    # Verify.
+    assert b'do_wait done!' in stdout

@@ -30,7 +30,7 @@ if [ ! -b "$DEVNAME" ]; then
 fi
 
 # Setup trap for hooks and FAILED_EJECT.
-trap "hook pre-on-err; on_err; hook post-on-err" ERR
+trap "hook pre-on-err; on_err; hook post-on-err; wait" ERR
 
 # Prepare the environment before ripping.
 hook pre-prepare
@@ -45,10 +45,7 @@ sudo -u mkv LD_PRELOAD=/force_umask.so makemkvcon mkv ${DEBUG:+--debug} --progre
     |low_space_term \
     |catch_failed
 hook post-rip
-
-# Move media from incoming directory to movie directory.
-sudo -u mkv mv "$DIR_WORKING/"* "$DIR_FINAL/"
-sudo -u mkv rmdir "$DIR_WORKING"
+move_back
 
 # Eject.
 if [ "$NO_EJECT" != "true" ]; then
@@ -59,4 +56,5 @@ if [ "$NO_EJECT" != "true" ]; then
 fi
 
 hook end
+wait
 echo Done after $(date -u -d @$SECONDS +%T) with $(basename "$DIR_FINAL")

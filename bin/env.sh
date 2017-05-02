@@ -113,3 +113,9 @@ catch_failed () {
     sync
     exit 1
 }
+
+# Move media from incoming directory to movie directory.
+move_back () {
+    sudo -u mkv mv "$DIR_WORKING/"* "$DIR_FINAL/"
+    sudo -u mkv rmdir "$DIR_WORKING"
+}
