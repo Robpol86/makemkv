@@ -9,6 +9,14 @@ jobs:
       - checkout
 
       - run:
+          name: Install Test Dependencies
+          background: true
+          command: |
+            sudo touch /etc/udev/rules.d/85-makemkv.rules && sudo chmod g+w $_ && sudo chgrp $(id -g) $_
+            pyenv install 3.6.1 && pyenv local $_
+            pip install tox
+
+      - run:
           name: Build Shared Object
           command: |
             cd lib
@@ -17,14 +25,6 @@ jobs:
 
       - store_artifacts:
           path: ~/force_umask.so
-
-      - run:
-          name: Install Test Dependencies
-          background: true
-          command: |
-            sudo touch /etc/udev/rules.d/85-makemkv.rules && sudo chmod g+w $_ && sudo chgrp $(id -g) $_
-            pyenv install 3.6.1 && pyenv local $_
-            pip install tox
 
       - run:
           name: Update Docker
