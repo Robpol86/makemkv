@@ -13,7 +13,7 @@ jobs:
         command: |
           cd lib
           gcc -o force_umask.so force_umask.c -fPIC -shared
-          git diff --no-ext-diff --quiet --exit-code force_umask.so || cp force_umask.so ~/
+          git diff --no-ext-diff --quiet --exit-code force_umask.so || cp -v force_umask.so ~/
 
       - store_artifacts:
         path: ~/force_umask.so
