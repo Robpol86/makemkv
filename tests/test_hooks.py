@@ -135,7 +135,7 @@ def test_wait(tmpdir, fail):
         pre_rip = root.ensure('hook-pre-rip.sh')
         pre_rip.write(
             'do_wait () {\n'
-            '    sleep 5\n'
+            '    sleep 2\n'
             '    echo do_wait done!\n'
             '}\n'
             'do_wait &\n'
@@ -153,3 +153,34 @@ def test_wait(tmpdir, fail):
 
     # Verify.
     assert b'do_wait done!' in stdout
+
+
+@pytest.mark.parametrize('fail', [False, True])
+@pytest.mark.usefixtures('cdemu')
+def test_wait_background_fail(tmpdir, fail):
+    """Make sure main script exits non-zero if background job fails.
+
+    :param py.path.local tmpdir: pytest fixture.
+    :param bool fail: Cause a failure during the run.
+    """
+    with build_image(tmpdir.join('root')) as (root, _, image_ids):
+        pre_rip = root.ensure('hook-pre-rip.sh')
+        pre_rip.write((
+            'do_wait () {{\n'
+            '    sleep 2\n'
+            '    echo do_wait fired!\n'
+            '    return {}\n'
+            '}}\n'
+            'do_wait &\n'
+        ).format(int(fail)))
+
+    # Docker run.
+    if fail:
+        with pytest.raises(subprocess.CalledProcessError) as exc:
+            pytest.run(image_id=image_ids[0])
+        stdout, stderr = exc.value.output, exc.value.stderr
+    else:
+        stdout, stderr = pytest.run(image_id=image_ids[0])
+
+    # Verify.
+    assert b'do_wait fired!' in stdout
