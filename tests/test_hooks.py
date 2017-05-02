@@ -135,7 +135,7 @@ def test_wait(tmpdir, fail):
         pre_rip = root.ensure('hook-pre-rip.sh')
         pre_rip.write(
             'do_wait () {\n'
-            '    sleep 5\n'
+            '    sleep 2\n'
             '    echo do_wait done!\n'
             '}\n'
             'do_wait &\n'
