@@ -58,7 +58,9 @@ int close(int fd) {
     if ((ret = readlink(link_name, path, sizeof(path) - 1)) > 0) {
         // In here means readlink() succeeded in resolving the symlink.
         path[ret] = 0;  // Terminate string.
-        printf("INTERCEPTED: %d -> %s\n", fd, path);
+        if (strlen(path) >= 19 && strncmp("/output/", path, 8) == 0) {
+            printf("INTERCEPTED: %d -> %s\n", fd, path);
+        }
     }
 
     return real_close(fd);
