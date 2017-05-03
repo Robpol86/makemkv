@@ -20,11 +20,11 @@ jobs:
           name: Build Shared Object
           command: |
             cd lib
-            gcc -o force_umask.so force_umask.c -fPIC -shared
-            git diff --no-ext-diff --quiet --exit-code force_umask.so || cp -v force_umask.so ~/
+            gcc -o wrappers.so wrappers.c -fPIC -shared
+            git diff --no-ext-diff --quiet --exit-code wrappers.so || cp -v wrappers.so ~/
 
       - store_artifacts:
-          path: ~/force_umask.so
+          path: ~/wrappers.so
 
       - run:
           name: Update Docker

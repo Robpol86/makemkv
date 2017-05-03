@@ -11,10 +11,10 @@
     intercept open(3) syscalls and modify the requested mode if a new MKV file inside /output is opened.
 
     Build:
-    gcc -o force_umask.so force_umask.c -fPIC -shared
+    gcc -o wrappers.so wrappers.c -fPIC -shared
 
     Usage:
-    LD_PRELOAD=/force_umask.so makemkvcon ...
+    LD_PRELOAD=/wrappers.so makemkvcon ...
  */
 
 #define _GNU_SOURCE
@@ -23,13 +23,16 @@
 #include <string.h>
 #include <sys/stat.h>
 
-// Pointers to real open(3) function.
-static int (*real_open)(const char *path, int flags, mode_t mode) = NULL;
+// Pointers to real open(3) and close(1) functions.
+static int (*real_open)(const char *path, int flags, mode_t mode);
+static int (*real_close)(int fd);
+static void __attribute__((constructor)) init(void) {
+    real_open = dlsym(RTLD_NEXT, "open");
+    real_close = dlsym(RTLD_NEXT, "close");
+}
 
-// Wrapping open(3) function call.
+// Wrapping open(3) function call for umask purposes.
 int open(const char *path, int flags, mode_t mode) {
-    if (real_open == NULL) real_open = dlsym(RTLD_NEXT, "open");
-
     // Don't intercept calls that don't open files in /output.
     // Shortest possible "valid" path is "/output/title00.mkv" which is 19 chars.
     if (strlen(path) < 19 || strncmp("/output/", path, 8) != 0) return real_open(path, flags, mode);
@@ -40,4 +43,11 @@ int open(const char *path, int flags, mode_t mode) {
 
     // Call with new mode (from touch command source code).
     return real_open(path, flags, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+}
+
+// Wrapping close(1) function call for SIGUSR1 purposes.
+int close(int fd) {
+    printf("INTERCEPTED: %d\n", fd);
+    // TODO
+    return real_close(fd);
 }
