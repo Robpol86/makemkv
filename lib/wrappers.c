@@ -51,14 +51,14 @@ int open(const char *path, int flags, mode_t mode) {
 // Wrapping close(1) function call for SIGUSR1 purposes.
 int close(int fd) {
     char link_name[sizeof("/proc/self/fd/") + sizeof(int) * 3];
-    char target_path[PATH_MAX];
+    char path[PATH_MAX];
     ssize_t ret;
 
     snprintf(link_name, sizeof link_name, "/proc/self/fd/%d", fd);  // Set link_name to something like: /proc/self/fd/16
-    if ((ret = readlink(link_name, target_path, sizeof(target_path) - 1)) > 0) {
+    if ((ret = readlink(link_name, path, sizeof(path) - 1)) > 0) {
         // In here means readlink() succeeded in resolving the symlink.
-        target_path[ret] = 0;  // Terminate string.
-        printf("INTERCEPTED: %d -> %s\n", fd, target_path);
+        path[ret] = 0;  // Terminate string.
+        printf("INTERCEPTED: %d -> %s\n", fd, path);
     }
 
     return real_close(fd);
