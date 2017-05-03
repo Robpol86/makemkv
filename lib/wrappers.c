@@ -49,7 +49,13 @@ int open(const char *path, int flags, mode_t mode) {
 
 // Wrapping close(1) function call for SIGUSR1 purposes.
 int close(int fd) {
-    printf("INTERCEPTED: %d\n", fd);
-    // TODO
+    char link_name[sizeof("/proc/self/fd/") + sizeof(int) * 3];
+    char target_path[PATH_MAX];
+
+    snprintf(link_name, sizeof link_name, "/proc/self/fd/%d", fd);
+    if (readlink(link_name, target_path, sizeof(target_path)) > 0) {
+        printf("INTERCEPTED: %d -> %s\n", fd, target_path);
+    }
+
     return real_close(fd);
 }
