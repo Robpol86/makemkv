@@ -1,7 +1,7 @@
 FROM robpol86/makemkv
 MAINTAINER Robpol86 <robpol86@gmail.com>
 
-RUN dnf install -y gcc
+RUN dnf install -y gcc procps-ng-devel
 
 VOLUME /output
 WORKDIR /output
