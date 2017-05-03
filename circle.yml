@@ -35,18 +35,20 @@ jobs:
             cdemu status
 
       - run:
+          name: Build Dockerfile
+          command: docker build . -t robpol86/makemkv
+
+      - run:
           name: Build Shared Object
           command: |
-            cd lib
-            docker run -v $PWD:/output .
-            git diff --no-ext-diff --quiet --exit-code wrappers.so || cp -v wrappers.so ~/
+            docker build -t robpol86/makemkv/gcc lib
+            docker run -v $PWD:/output robpol86/makemkv/gcc
+            git diff --no-ext-diff --quiet --exit-code lib/wrappers.so && exit || true
+            cp -v lib/wrappers.so ~/
+            docker build . -t robpol86/makemkv
 
       - store_artifacts:
           path: ~/wrappers.so
-
-      - run:
-          name: Build Dockerfile
-          command: docker build . -t robpol86/makemkv
 
       - run:
           name: Run Tests
