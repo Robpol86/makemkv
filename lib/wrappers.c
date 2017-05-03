@@ -39,7 +39,7 @@ static void init(void) {
 
     // Main bash script calls sudo which calls makemkvcon. Get the bash script PID to send SIGUSR1 to.
     pid_t sudo_pid = getppid();
-    // TODO
+    bash_pid = sudo_pid;  // TODO
 }
 
 // Determine if path is an MKV file we're interested in.
@@ -48,7 +48,7 @@ bool is_mkv(const char *path) {
     if (strlen(path) < 19) return false;
 
     // Make sure file is in /output.
-    if (strncmp("/output/", path, 8) != 0) return false;
+    if (strncmp("/output/", path, sizeof("/output/") - 1) != 0) return false;
 
     // Lastly make sure file extension is ".mkv".
     char *dot = strrchr(path, '.');
@@ -66,7 +66,7 @@ int open(const char *path, int flags, mode_t mode) {
 
 // Wrapping close() function call for SIGUSR1 purposes.
 int close(int fd) {
-    char link_name[sizeof("/proc/self/fd/") + sizeof(int) * 3];
+    char link_name[sizeof("/proc/self/fd/") + 4];
     char path[PATH_MAX];
     ssize_t ret;
 
@@ -74,7 +74,10 @@ int close(int fd) {
     if ((ret = readlink(link_name, path, sizeof(path) - 1)) > 0) {
         // In here means readlink() succeeded in resolving the symlink.
         path[ret] = 0;  // Terminate string.
-        if (is_mkv(path)) kill(bash_pid, SIGUSR1);
+        if (is_mkv(path)) {
+            printf("INTERCEPTED: %d -> %s; SENDING SIGNAL TO %d\n", fd, path, bash_pid);
+            kill(bash_pid, SIGUSR1);
+        }
     }
 
     return real_close(fd);
