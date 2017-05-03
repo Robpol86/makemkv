@@ -17,16 +17,6 @@ jobs:
             pip install tox
 
       - run:
-          name: Build Shared Object
-          command: |
-            cd lib
-            docker run -v $PWD:/output .
-            git diff --no-ext-diff --quiet --exit-code wrappers.so || cp -v wrappers.so ~/
-
-      - store_artifacts:
-          path: ~/wrappers.so
-
-      - run:
           name: Update Docker
           command: |
             curl -fsSL https://download.docker.com/linux/ubuntu/gpg |sudo apt-key add -
@@ -43,6 +33,16 @@ jobs:
             sudo apt-get install -y cdemu-client linux-headers-$(uname -r)
             eval $(dbus-launch --sh-syntax |tee ~/.cdemu |tee -a ~/.bashrc)
             cdemu status
+
+      - run:
+          name: Build Shared Object
+          command: |
+            cd lib
+            docker run -v $PWD:/output .
+            git diff --no-ext-diff --quiet --exit-code wrappers.so || cp -v wrappers.so ~/
+
+      - store_artifacts:
+          path: ~/wrappers.so
 
       - run:
           name: Build Dockerfile
