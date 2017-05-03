@@ -25,6 +25,7 @@
 #include <sys/stat.h>
 
 
+static pid_t bash_pid;
 static int (*real_close)(int fd);
 static int (*real_open)(const char *path, int flags, mode_t mode);
 static void init(void) __attribute__((constructor));
@@ -69,9 +70,17 @@ int open(const char *path, int flags, mode_t mode) {
 }
 
 
+// Derive the file path from a file descriptor.
+const char get_path(int fd) {
+    char link_name[sizeof("/proc/self/fd/") + 4];
+    snprintf(link_name, sizeof link_name, "/proc/self/fd/%d", fd);  // Set link_name to something like: /proc/self/fd/16
+    // TODO
+    return link_name;
+}
+
+
 // Wrapping close() function call for SIGUSR1 purposes.
 int close(int fd) {
-    int ret = real_close(fd);
     // TODO
-    return ret;
+    return real_close(fd);
 }
