@@ -27,16 +27,19 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-static pid_t ppid;
+static pid_t bash_pid;
 static int (*real_close)(int fd);
 static int (*real_open)(const char *path, int flags, mode_t mode);
 static void init(void) __attribute__((constructor));
 
 // Constructor.
 static void init(void) {
-    ppid = getppid();
     real_close = dlsym(RTLD_NEXT, "close");
     real_open = dlsym(RTLD_NEXT, "open");
+
+    // Main bash script calls sudo which calls makemkvcon. Get the bash script PID to send SIGUSR1 to.
+    pid_t sudo_pid = getppid();
+    // TODO
 }
 
 // Determine if path is an MKV file we're interested in.
@@ -52,7 +55,7 @@ bool is_mkv(const char *path) {
     return dot && !strcmp(dot, ".mkv");
 }
 
-// Wrapping open(3) function call for umask purposes.
+// Wrapping open() function call for umask purposes.
 int open(const char *path, int flags, mode_t mode) {
     // Don't intercept calls that don't open MKV files in /output.
     if (!is_mkv(path)) return real_open(path, flags, mode);
@@ -61,7 +64,7 @@ int open(const char *path, int flags, mode_t mode) {
     return real_open(path, flags, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
 }
 
-// Wrapping close(1) function call for SIGUSR1 purposes.
+// Wrapping close() function call for SIGUSR1 purposes.
 int close(int fd) {
     char link_name[sizeof("/proc/self/fd/") + sizeof(int) * 3];
     char path[PATH_MAX];
@@ -71,7 +74,7 @@ int close(int fd) {
     if ((ret = readlink(link_name, path, sizeof(path) - 1)) > 0) {
         // In here means readlink() succeeded in resolving the symlink.
         path[ret] = 0;  // Terminate string.
-        if (is_mkv(path)) kill(ppid, SIGUSR1);
+        if (is_mkv(path)) kill(bash_pid, SIGUSR1);
     }
 
     return real_close(fd);
