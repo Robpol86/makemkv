@@ -19,18 +19,29 @@
 
 #define _GNU_SOURCE
 #include <dlfcn.h>
+#include <proc/readproc.h>
 #include <stdbool.h>
 #include <string.h>
 #include <sys/stat.h>
 
 
+static int (*real_close)(int fd);
 static int (*real_open)(const char *path, int flags, mode_t mode);
 static void init(void) __attribute__((constructor));
 
 
 // Constructor.
 static void init(void) {
+    real_close = dlsym(RTLD_NEXT, "close");
     real_open = dlsym(RTLD_NEXT, "open");
+
+    // Main bash script calls sudo which calls makemkvcon. Get the bash script PID to send SIGUSR1 to.
+    pid_t sudo_pid = getppid();
+    PROCTAB* proc = openproc(PROC_FILLSTAT | PROC_FILLSTATUS, sudo_pid);
+    if (proc) {
+        // TODO
+        closeproc(proc);
+    }
 }
 
 
@@ -55,4 +66,12 @@ int open(const char *path, int flags, mode_t mode) {
 
     // Call with new mode (from touch command source code).
     return real_open(path, flags, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+}
+
+
+// Wrapping close() function call for SIGUSR1 purposes.
+int close(int fd) {
+    int ret = real_close(fd);
+    // TODO
+    return ret;
 }
