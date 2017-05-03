@@ -20,6 +20,7 @@
 #define _GNU_SOURCE
 #include <dlfcn.h>
 #include <limits.h>
+#include <proc/readproc.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -27,10 +28,12 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+
 static pid_t bash_pid;
 static int (*real_close)(int fd);
 static int (*real_open)(const char *path, int flags, mode_t mode);
 static void init(void) __attribute__((constructor));
+
 
 // Constructor.
 static void init(void) {
@@ -39,8 +42,17 @@ static void init(void) {
 
     // Main bash script calls sudo which calls makemkvcon. Get the bash script PID to send SIGUSR1 to.
     pid_t sudo_pid = getppid();
-    bash_pid = sudo_pid;  // TODO
+    PROCTAB* proc = openproc(PROC_FILLSTAT | PROC_FILLSTATUS, sudo_pid);
+    if (proc) {
+//        proc_t sudo_info = readproc(proc, NULL);
+//        if (sudo_info) {
+//            bash_pid = sudo_info.ppid;
+//            free(sudo_info);
+//        }
+        closeproc(proc);
+    }
 }
+
 
 // Determine if path is an MKV file we're interested in.
 bool is_mkv(const char *path) {
@@ -55,6 +67,7 @@ bool is_mkv(const char *path) {
     return dot && !strcmp(dot, ".mkv");
 }
 
+
 // Wrapping open() function call for umask purposes.
 int open(const char *path, int flags, mode_t mode) {
     // Don't intercept calls that don't open MKV files in /output.
@@ -63,6 +76,7 @@ int open(const char *path, int flags, mode_t mode) {
     // Call with new mode (from touch command source code).
     return real_open(path, flags, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
 }
+
 
 // Wrapping close() function call for SIGUSR1 purposes.
 int close(int fd) {
@@ -75,8 +89,11 @@ int close(int fd) {
         // In here means readlink() succeeded in resolving the symlink.
         path[ret] = 0;  // Terminate string.
         if (is_mkv(path)) {
-            printf("INTERCEPTED: %d -> %s; SENDING SIGNAL TO %d\n", fd, path, bash_pid);
-            kill(bash_pid, SIGUSR1);
+            printf("INTERCEPTED: %d -> %s\n", fd, path);
+            if (bash_pid) {
+                printf("SENDING SIGNAL TO %d\n", bash_pid);
+                kill(bash_pid, SIGUSR1);
+            }
         }
     }
 

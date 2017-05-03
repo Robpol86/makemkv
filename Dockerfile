@@ -2,7 +2,7 @@ FROM fedora:25
 MAINTAINER Robpol86 <robpol86@gmail.com>
 
 RUN dnf update -y && \
-    dnf install -y dnf-plugins-core sudo && \
+    dnf install -y dnf-plugins-core libprocps3-dev sudo && \
     dnf config-manager --add-repo=http://negativo17.org/repos/fedora-multimedia.repo && \
     dnf install -y makemkv && \
     dnf clean all && \
