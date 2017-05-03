@@ -23,10 +23,12 @@
 #include <string.h>
 #include <sys/stat.h>
 
-// Pointers to real open(3) and close(1) functions.
-static int (*real_open)(const char *path, int flags, mode_t mode);
 static int (*real_close)(int fd);
-static void __attribute__((constructor)) init(void) {
+static int (*real_open)(const char *path, int flags, mode_t mode);
+static void init(void) __attribute__((constructor));
+
+// Constructor.
+static void init(void) {
     real_open = dlsym(RTLD_NEXT, "open");
     real_close = dlsym(RTLD_NEXT, "close");
 }
