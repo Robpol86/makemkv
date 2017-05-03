@@ -67,11 +67,8 @@ int close(int fd) {
     if ((ret = readlink(link_name, path, sizeof(path) - 1)) > 0) {
         // In here means readlink() succeeded in resolving the symlink.
         path[ret] = 0;  // Terminate string.
-        if (strlen(path) >= 19 && strncmp("/output/", path, 8) == 0) {
-            char *dot = strrchr(path, '.');
-            if (dot && !strcmp(dot, ".mkv")) {
-                printf("INTERCEPTED: %d -> %s\n", fd, path);
-            }
+        if (is_mkv(path)) {
+            printf("INTERCEPTED: %d -> %s\n", fd, path);
         }
     }
 
