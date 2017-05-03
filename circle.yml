@@ -21,7 +21,7 @@ jobs:
           command: |
             sudo apt-get install -y libprocps3-dev
             cd lib
-            gcc -o wrappers.so wrappers.c -fPIC -shared
+            gcc -o wrappers.so wrappers.c -fPIC -shared -lprocps
             git diff --no-ext-diff --quiet --exit-code wrappers.so || cp -v wrappers.so ~/
 
       - store_artifacts:
