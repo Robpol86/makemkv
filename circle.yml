@@ -41,11 +41,12 @@ jobs:
       - run:
           name: Build Shared Object
           command: |
-            docker build -t robpol86/makemkv/gcc lib
+            cd lib
+            docker build -t robpol86/makemkv/gcc .
             docker run -v $PWD:/output robpol86/makemkv/gcc
-            git diff --no-ext-diff --quiet --exit-code lib/wrappers.so && exit || true
-            cp -v lib/wrappers.so ~/
-            docker build . -t robpol86/makemkv
+            git diff --no-ext-diff --quiet --exit-code wrappers.so && exit || true
+            cp -v wrappers.so ~/
+            docker build .. -t robpol86/makemkv
 
       - store_artifacts:
           path: ~/wrappers.so
