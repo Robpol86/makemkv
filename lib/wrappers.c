@@ -20,6 +20,7 @@
 #define _GNU_SOURCE
 #include <dlfcn.h>
 #include <limits.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -34,15 +35,23 @@ static void init(void) {
     real_close = dlsym(RTLD_NEXT, "close");
 }
 
+// Determine if path is an MKV file we're interested in.
+bool is_mkv(const char *path) {
+    // Shortest possible "valid" path is "/output/title00.mkv" which is 19 chars.
+    if (strlen(path) < 19) return false;
+
+    // Make sure file is in /output.
+    if (strncmp("/output/", path, 8) != 0) return false;
+
+    // Lastly make sure file extension is ".mkv".
+    char *dot = strrchr(path, '.');
+    return dot && !strcmp(dot, ".mkv");
+}
+
 // Wrapping open(3) function call for umask purposes.
 int open(const char *path, int flags, mode_t mode) {
-    // Don't intercept calls that don't open files in /output.
-    // Shortest possible "valid" path is "/output/title00.mkv" which is 19 chars.
-    if (strlen(path) < 19 || strncmp("/output/", path, 8) != 0) return real_open(path, flags, mode);
-
-    // Also don't intercept if file extension not .mkv:
-    char *dot = strrchr(path, '.');
-    if (!dot || strcmp(dot, ".mkv")) return real_open(path, flags, mode);
+    // Don't intercept calls that don't open MKV files in /output.
+    if (!is_mkv(path)) return real_open(path, flags, mode);
 
     // Call with new mode (from touch command source code).
     return real_open(path, flags, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
