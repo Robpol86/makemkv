@@ -19,9 +19,8 @@ jobs:
       - run:
           name: Build Shared Object
           command: |
-            sudo apt-get install -y libprocps3-dev
             cd lib
-            gcc -o wrappers.so wrappers.c -fPIC -shared -lprocps
+            docker run -v $PWD:/output .
             git diff --no-ext-diff --quiet --exit-code wrappers.so || cp -v wrappers.so ~/
 
       - store_artifacts:
