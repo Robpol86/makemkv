@@ -22,6 +22,7 @@
 #include <proc/readproc.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 
@@ -57,7 +58,11 @@ bool is_mkv(const char *path) {
 
     // Lastly make sure file extension is ".mkv".
     char *dot = strrchr(path, '.');
-    return dot && !strcmp(dot, ".mkv");
+    bool ret = dot && !strcmp(dot, ".mkv");
+
+    // Free and return.
+    free(dot);
+    return ret;
 }
 
 
@@ -72,7 +77,7 @@ int open(const char *path, int flags, mode_t mode) {
 
 
 // Derive the file path from a file descriptor.
-const char get_path(int fd) {
+const char *get_path(int fd) {
     char link_name[sizeof("/proc/self/fd/") + 4];
     snprintf(link_name, sizeof link_name, "/proc/self/fd/%d", fd);  // Set link_name to something like: /proc/self/fd/16
     // TODO
