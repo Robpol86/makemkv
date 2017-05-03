@@ -11,32 +11,47 @@
     intercept open(3) syscalls and modify the requested mode if a new MKV file inside /output is opened.
 
     Build:
-    gcc -o force_umask.so force_umask.c -fPIC -shared
+    gcc -o wrappers.so wrappers.c -fPIC -shared
 
     Usage:
-    LD_PRELOAD=/force_umask.so makemkvcon ...
+    LD_PRELOAD=/wrappers.so makemkvcon ...
  */
 
 #define _GNU_SOURCE
 #include <dlfcn.h>
-#include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
 #include <sys/stat.h>
 
-// Pointers to real open(3) function.
-static int (*real_open)(const char *path, int flags, mode_t mode) = NULL;
 
-// Wrapping open(3) function call.
-int open(const char *path, int flags, mode_t mode) {
-    if (real_open == NULL) real_open = dlsym(RTLD_NEXT, "open");
+static int (*real_open)(const char *path, int flags, mode_t mode);
+static void init(void) __attribute__((constructor));
 
-    // Don't intercept calls that don't open files in /output.
+
+// Constructor.
+static void init(void) {
+    real_open = dlsym(RTLD_NEXT, "open");
+}
+
+
+// Determine if path is an MKV file we're interested in.
+bool is_mkv(const char *path) {
     // Shortest possible "valid" path is "/output/title00.mkv" which is 19 chars.
-    if (strlen(path) < 19 || strncmp("/output/", path, 8) != 0) return real_open(path, flags, mode);
+    if (strlen(path) < 19) return false;
 
-    // Also don't intercept if file extension not .mkv:
+    // Make sure file is in /output.
+    if (strncmp("/output/", path, sizeof("/output/") - 1) != 0) return false;
+
+    // Lastly make sure file extension is ".mkv".
     char *dot = strrchr(path, '.');
-    if (!dot || strcmp(dot, ".mkv")) return real_open(path, flags, mode);
+    return dot && !strcmp(dot, ".mkv");
+}
+
+
+// Wrapping open() function call for umask purposes.
+int open(const char *path, int flags, mode_t mode) {
+    // Don't intercept calls that don't open MKV files in /output.
+    if (!is_mkv(path)) return real_open(path, flags, mode);
 
     // Call with new mode (from touch command source code).
     return real_open(path, flags, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);

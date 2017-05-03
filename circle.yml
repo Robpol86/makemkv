@@ -17,6 +17,16 @@ jobs:
             pip install tox
 
       - run:
+          name: Build Shared Object
+          command: |
+            cd lib
+            gcc -o wrappers.so wrappers.c -fPIC -shared
+            git diff --no-ext-diff --quiet --exit-code wrappers.so || cp -v wrappers.so ~/
+
+      - store_artifacts:
+          path: ~/wrappers.so
+
+      - run:
           name: Update Docker
           command: |
             curl -fsSL https://download.docker.com/linux/ubuntu/gpg |sudo apt-key add -
