@@ -58,11 +58,7 @@ bool is_mkv(const char *path) {
 
     // Lastly make sure file extension is ".mkv".
     char *dot = strrchr(path, '.');
-    bool ret = dot && !strcmp(dot, ".mkv");
-
-    // Free and return.
-    free(dot);
-    return ret;
+    return dot && !strcmp(dot, ".mkv");
 }
 
 
