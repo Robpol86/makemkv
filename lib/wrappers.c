@@ -20,19 +20,23 @@
 #define _GNU_SOURCE
 #include <dlfcn.h>
 #include <limits.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 
+static pid_t ppid;
 static int (*real_close)(int fd);
 static int (*real_open)(const char *path, int flags, mode_t mode);
 static void init(void) __attribute__((constructor));
 
 // Constructor.
 static void init(void) {
-    real_open = dlsym(RTLD_NEXT, "open");
+    ppid = getppid();
     real_close = dlsym(RTLD_NEXT, "close");
+    real_open = dlsym(RTLD_NEXT, "open");
 }
 
 // Determine if path is an MKV file we're interested in.
@@ -67,9 +71,7 @@ int close(int fd) {
     if ((ret = readlink(link_name, path, sizeof(path) - 1)) > 0) {
         // In here means readlink() succeeded in resolving the symlink.
         path[ret] = 0;  // Terminate string.
-        if (is_mkv(path)) {
-            printf("INTERCEPTED: %d -> %s\n", fd, path);
-        }
+        if (is_mkv(path)) kill(ppid, SIGUSR1);
     }
 
     return real_close(fd);
