@@ -44,8 +44,15 @@ variables in your hook scripts.
 * **/hook-pre-prepare.sh** Before `prepare` is called, which finishes initializing the environment.
 * **/hook-post-prepare.sh** After `prepare` is called.
 * **/hook-pre-rip.sh** Before makemkvcon is executed.
+* **/hook-post-title.sh** While makemkvcon runs after an MKV file is done.
 * **/hook-post-rip.sh** After makemkvcon successfully exits.
 * **/hook-end.sh** At the end of the main script after a successful run of makemkvcon.
+
+The **/hook-post-title.sh** hook allows you to process an MKV file (named `$TITLE_PATH`) as soon as it's done ripping,
+while makemkvcon rips the next file. Due to the way I've setup bash and makemkvcon to communicate (using a FIFO/named
+pipe) your hook script shouldn't block. If you want to start a long-running process you should run it in the background
+(the main script waits for all jobs to exit). Otherwise bash won't read from the pipe and makemkvcon will block (and
+stop ripping) until your script is done.
 
 The following hooks are only fired when `NO_EJECT!=true` and when makemkvcon successfully exits:
 

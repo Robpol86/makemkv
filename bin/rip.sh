@@ -40,6 +40,7 @@ hook post-prepare
 # Rip media.
 echo "Ripping..."
 hook pre-rip
+handle_fifo /tmp/titles_done &
 sudo -u mkv LD_PRELOAD=/wrappers.so makemkvcon mkv ${DEBUG:+--debug} --progress -same --directio true \
     "dev:$DEVNAME" all "$DIR_WORKING" \
     |low_space_term \

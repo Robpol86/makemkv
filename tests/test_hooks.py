@@ -42,7 +42,7 @@ def test_success(tmpdir):
 
     :param py.path.local tmpdir: pytest fixture.
     """
-    hooks = ('post-env', 'pre-prepare', 'post-prepare', 'pre-rip', 'post-rip', 'end')
+    hooks = ('post-env', 'pre-prepare', 'post-prepare', 'pre-rip', 'post-title', 'post-rip', 'end')
     with build_image(tmpdir.join('root')) as (root, _, image_ids):
         for hook in hooks:
             root.ensure('hook-{}.sh'.format(hook)).write('env |sort')
@@ -56,6 +56,8 @@ def test_success(tmpdir):
         assert b'FIRING HOOK: /hook-%s.sh' % hook.encode('utf8') in stderr
         assert b'_HOOK_SCRIPT=/hook-%s.sh' % hook.encode('utf8') in stdout
         assert b'END OF HOOK: /hook-%s.sh' % hook.encode('utf8') in stderr
+        if hook == 'post-title':
+            assert re.compile(br'^TITLE_PATH=/output/Sample[a-zA-Z0-9_/.-]+/title00\.mkv$', re.MULTILINE).search(stdout)
     assert stderr.count(b'\nEND OF HOOK: ') == len(hooks)  # Verify no other hooks fired.
     pytest.verify(output)
 
