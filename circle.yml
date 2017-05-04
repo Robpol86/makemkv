@@ -17,17 +17,6 @@ jobs:
             pip install tox
 
       - run:
-          name: Build Shared Object
-          command: |
-            sudo apt-get install -y libprocps3-dev
-            cd lib
-            gcc -o wrappers.so wrappers.c -fPIC -shared
-            git diff --no-ext-diff --quiet --exit-code wrappers.so || cp -v wrappers.so ~/
-
-      - store_artifacts:
-          path: ~/wrappers.so
-
-      - run:
           name: Update Docker
           command: |
             curl -fsSL https://download.docker.com/linux/ubuntu/gpg |sudo apt-key add -
@@ -48,6 +37,19 @@ jobs:
       - run:
           name: Build Dockerfile
           command: docker build . -t robpol86/makemkv
+
+      - run:
+          name: Build Shared Object
+          command: |
+            cd lib
+            docker build -t robpol86/makemkv/gcc .
+            docker run -v $PWD:/output robpol86/makemkv/gcc
+            git diff --no-ext-diff --quiet --exit-code wrappers.so && exit || true
+            cp -v wrappers.so ~/
+            docker build .. -t robpol86/makemkv
+
+      - store_artifacts:
+          path: ~/wrappers.so
 
       - run:
           name: Run Tests

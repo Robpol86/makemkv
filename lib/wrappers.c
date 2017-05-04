@@ -11,7 +11,7 @@
     intercept open(3) syscalls and modify the requested mode if a new MKV file inside /output is opened.
 
     Build:
-    gcc -o wrappers.so wrappers.c -fPIC -shared
+    gcc -o wrappers.so wrappers.c -fPIC -shared -lprocps
 
     Usage:
     LD_PRELOAD=/wrappers.so makemkvcon ...
@@ -24,6 +24,7 @@
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
