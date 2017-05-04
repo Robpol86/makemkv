@@ -86,10 +86,12 @@ int close(int fd) {
     snprintf(link_name, sizeof link_name, "/proc/self/fd/%d", fd);  // Set link_name to something like: /proc/self/fd/16
     char *path = realpath(link_name, NULL);
 
-    // Make sure file is MKV and not empty.
-    if (!is_mkv(path) || lseek(fd, 0L, SEEK_END) < 1) {
+    // Make sure file is MKV and not empty. Close fd here since we don't need it open anymore.
+    bool send_signal = is_mkv(path) && lseek(fd, 0L, SEEK_END) > 0;
+    int ret = real_close(fd);
+    if (!send_signal) {
         free(path);
-        return real_close(fd);
+        return ret;
     }
 
     // TODO
@@ -100,5 +102,5 @@ int close(int fd) {
     }
 
     free(path);
-    return real_close(fd);
+    return ret;
 }
