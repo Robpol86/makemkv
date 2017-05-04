@@ -37,7 +37,7 @@ static void init(void) {
 // Determine if path is an MKV file we're interested in.
 bool is_mkv(const char *path) {
     // Shortest possible "valid" path is "/output/title00.mkv" which is 19 chars.
-    if (strlen(path) < 19) return false;
+    if (!path || strlen(path) < 19) return false;
 
     // Make sure file is in /output.
     if (strncmp("/output/", path, sizeof("/output/") - 1) != 0) return false;
