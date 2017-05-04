@@ -43,14 +43,14 @@ static void init(void) {
 
     // Main bash script calls sudo which calls makemkvcon. Get the bash script PID to send SIGUSR1 to.
     pid_t sudo_pid = getppid();
-    PROCTAB* proc = openproc(PROC_FILLSTAT | PROC_FILLSTATUS, sudo_pid);
-    if (proc) {
-//        proc_t sudo_info = readproc(proc, NULL);
-//        if (sudo_info) {
-//            bash_pid = sudo_info.ppid;
-//            free(sudo_info);
-//        }
-        closeproc(proc);
+    PROCTAB *pt = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS, sudo_pid);
+    if (pt) {
+        proc_t *sudo_info = readproc(pt, NULL);
+        if (sudo_info) {
+            bash_pid = sudo_info->ppid;
+            freeproc(sudo_info);
+        }
+        closeproc(pt);
     }
 }
 
