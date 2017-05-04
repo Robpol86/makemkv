@@ -58,7 +58,7 @@ static void init(void) {
 // Determine if path is an MKV file we're interested in.
 bool is_mkv(const char *path) {
     // Shortest possible "valid" path is "/output/title00.mkv" which is 19 chars.
-    if (strlen(path) < 19) return false;
+    if (!path || strlen(path) < 19) return false;
 
     // Make sure file is in /output.
     if (strncmp("/output/", path, sizeof("/output/") - 1) != 0) return false;
@@ -81,22 +81,24 @@ int open(const char *path, int flags, mode_t mode) {
 
 // Wrapping close() function call for SIGUSR1 purposes.
 int close(int fd) {
+    // First resolve file descriptor to real path of file before closing.
     char link_name[sizeof("/proc/self/fd/") + 4];
-    char path[PATH_MAX];
-    ssize_t ret;
-
     snprintf(link_name, sizeof link_name, "/proc/self/fd/%d", fd);  // Set link_name to something like: /proc/self/fd/16
-    if ((ret = readlink(link_name, path, sizeof(path) - 1)) > 0) {
-        // In here means readlink() succeeded in resolving the symlink.
-        path[ret] = 0;  // Terminate string.
-        if (is_mkv(path)) {
-            printf("INTERCEPTED: %d -> %s\n", fd, path);
-            if (bash_pid) {
-                printf("SENDING SIGNAL TO %d\n", bash_pid);
-                kill(bash_pid, SIGUSR1);
-            }
-        }
+    char *path = realpath(link_name, NULL);
+
+    // Make sure file is MKV and not empty.
+    if (!is_mkv(path) || lseek(fd, 0L, SEEK_END) < 1) {
+        free(path);
+        return real_close(fd);
     }
 
+    // TODO
+    printf("INTERCEPTED: %d -> %s\n", fd, path);
+    if (bash_pid) {
+        printf("SENDING SIGNAL TO %d\n", bash_pid);
+        kill(bash_pid, SIGUSR1);
+    }
+
+    free(path);
     return real_close(fd);
 }
