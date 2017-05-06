@@ -94,13 +94,16 @@ You should see something like this:
 ```
 Unable to find image 'robpol86/makemkv:latest' locally
 latest: Pulling from robpol86/makemkv
-bc5187a39b05: Pull complete
-3d9a191cc067: Pull complete
-fe1343ee5111: Pull complete
-f9e562c653cd: Pull complete
-50304eac31e3: Pull complete
-Digest: sha256:88e4bf005b0b0dfc3d7f3da85713aec9542f8ed213790864b6a7cdc
+691bc14ee274: Pull complete
+1197e486c122: Pull complete
+7b1362b91005: Pull complete
+0895c2c006e9: Pull complete
+4d8ee1e190c3: Pull complete
+438cb789657c: Pull complete
+ad875900bb11: Pull complete
+Digest: sha256:9ee3d0f93215c2dfda24f56c951c6a38a205f3d6fbb1fc7ee3f79d3
 Status: Downloaded newer image for robpol86/makemkv:latest
+Defaults umask = 0022
 Ripping...
 MakeMKV v1.10.5 linux(x64-release) started
 Current operation: Scanning CD-ROM devices
