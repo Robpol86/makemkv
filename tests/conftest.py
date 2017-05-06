@@ -46,12 +46,18 @@ def run(command=None, args=None, output=None, image_id=None, environ=None, cwd=N
     else:
         master, slave = 0, 0
 
+    # Determine timeout.
+    if command[0] in ('docker',):
+        timeout = 120
+    else:
+        timeout = 30
+
     # Run command.
     try:
         result = subprocess.run(
             [str(i) for i in command], check=True, cwd=cwd or HERE, env=env,
             stderr=subprocess.PIPE, stdin=slave or None, stdout=subprocess.PIPE,
-            timeout=30
+            timeout=timeout
         )
     finally:
         if slave:

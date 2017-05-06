@@ -86,6 +86,31 @@ def test_failed(tmpdir):
     assert stderr.count(b'\nEND OF HOOK: ') == len(hooks)  # Verify no other hooks fired.
 
 
+@pytest.mark.usefixtures('cdemu')
+def test_failed_after_makemkvcon(tmpdir):
+    """Test errors that happen after makemkvcon background and foreground trick.
+
+    :param py.path.local tmpdir: pytest fixture.
+    """
+    hooks = ('pre-on-err', 'post-on-err', 'pre-on-err-touch', 'post-on-err-touch')
+    with build_image(tmpdir.join('root')) as (root, _, image_ids):
+        for hook in hooks:
+            root.ensure('hook-{}.sh'.format(hook)).write('env |sort')
+        root.ensure('hook-post-rip.sh').write('false')
+
+    # Docker run.
+    with pytest.raises(subprocess.CalledProcessError) as exc:
+        pytest.run(image_id=image_ids[0])
+    stdout, stderr = exc.value.output, exc.value.stderr
+
+    # Verify.
+    for hook in hooks:
+        assert b'\nFIRING HOOK: /hook-%s.sh' % hook.encode('utf8') in stderr
+        assert b'\n_HOOK_SCRIPT=/hook-%s.sh' % hook.encode('utf8') in stdout
+        assert b'\nEND OF HOOK: /hook-%s.sh' % hook.encode('utf8') in stderr
+    assert stderr.count(b'\nEND OF HOOK: ') == len(hooks)  # Verify no other hooks fired.
+
+
 @pytest.mark.parametrize('fail', [False, True])
 @pytest.mark.parametrize('no_eject', [False, True])
 @pytest.mark.usefixtures('cdemu')
@@ -144,6 +169,41 @@ def test_wait(tmpdir, fail):
         )
         if fail:
             pre_rip.write('false\n', 'a')
+
+    # Docker run.
+    if fail:
+        with pytest.raises(subprocess.CalledProcessError) as exc:
+            pytest.run(image_id=image_ids[0])
+        stdout, stderr = exc.value.output, exc.value.stderr
+    else:
+        stdout, stderr = pytest.run(image_id=image_ids[0])
+
+    # Verify.
+    assert b'do_wait done!' in stdout
+
+
+@pytest.mark.parametrize('fail', [False, True])
+@pytest.mark.usefixtures('cdemu')
+def test_wait_nested(tmpdir, fail):
+    """Test waiting for background jobs created by background jobs.
+
+    :param py.path.local tmpdir: pytest fixture.
+    :param bool fail: Cause a failure during the run.
+    """
+    with build_image(tmpdir.join('root')) as (root, _, image_ids):
+        post_title = root.ensure('hook-post-title.sh')
+        post_title.write(
+            'do_wait () {\n'
+            '    for _ in {1..5}; do\n'
+            '        if readlink /proc/*/exe |grep -q makemkvcon &> /dev/null; then sleep 1; else break; fi\n'
+            '    done\n'
+            '    sleep 5\n'
+            '    echo do_wait done!\n'
+            '}\n'
+            'do_wait &\n'
+        )
+        if fail:
+            root.ensure('hook-post-rip.sh').write('false\n', 'a')
 
     # Docker run.
     if fail:

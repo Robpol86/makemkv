@@ -71,31 +71,6 @@ on_err () {
     fi
 }
 
-# Read messages from makemkvcon through a named pipe and fire post-title hook.
-handle_fifo () {
-    local -x TITLE_PATH
-
-    # Wait for makemkvcon to create the file.
-    for (( i=1; i<=50; i++ )); do
-        if [ -e "$1" ]; then
-            break
-        elif [ "$i" -ne 50 ]; then
-            sleep 0.1
-        fi
-    done
-
-    # Listen for messages.
-    while read -rd $'\0' TITLE_PATH; do
-        if [ "$TITLE_PATH" == "fini" ]; then
-            break
-        elif [ "$TITLE_PATH" == "init" ]; then
-            continue
-        else
-            hook post-title
-        fi
-    done < $1
-}
-
 # Prepare the environment before ripping.
 prepare () {
     # Update UID and GID of "mkv" user at runtime.
@@ -140,6 +115,15 @@ catch_failed () {
     echo -e "\nERROR: One or more titles failed.\n" >&2
     sync
     exit 1
+}
+
+# Run makemkvcon. In a function for job control in rip.sh. Function should always be run in the background.
+run_makemkvcon () {
+    trap - ERR  # Disable error trap here to avoid firing error hooks twice.
+    sudo -u mkv LD_PRELOAD=/wrappers.so makemkvcon mkv ${DEBUG:+--debug} --progress -same --directio true \
+        "dev:$DEVNAME" all "$DIR_WORKING" \
+        |low_space_term \
+        |catch_failed
 }
 
 # Move media from incoming directory to movie directory.
