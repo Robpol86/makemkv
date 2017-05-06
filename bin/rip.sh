@@ -6,7 +6,6 @@
 
 set -E  # Call ERR traps when using -e.
 set -e  # Exit script if a command fails.
-set -m  # Enable job control (default on in terminal and off in scripts).
 set -u  # Treat unset variables as errors and exit immediately.
 set -o pipefail  # Exit script if pipes fail instead of just the last program.
 
@@ -42,6 +41,7 @@ hook post-prepare
 echo "Ripping..."
 hook pre-rip
 run_makemkvcon &
+makemkvcon_pid=$!
 timeout 5 bash -c "until [ -e /tmp/titles_done ]; do sleep 0.1; done"
 export TITLE_PATH
 while read -rd $'\0' TITLE_PATH; do
@@ -54,7 +54,7 @@ while read -rd $'\0' TITLE_PATH; do
     fi
 done < /tmp/titles_done
 unset TITLE_PATH
-fg run_makemkvcon
+wait ${makemkvcon_pid}
 hook post-rip
 move_back
 
