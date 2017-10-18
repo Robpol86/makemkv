@@ -9,7 +9,7 @@ set -e  # Exit script if a command fails.
 set -u  # Treat unset variables as errors and exit immediately.
 set -o pipefail  # Exit script if pipes fail instead of just the last program.
 
-KEY="$(wget -q -O- 'https://www.makemkv.com/forum2/viewtopic.php?f=5&t=1053' | grep -oP 'T-[\w_-]{66}')";
+KEY="$(curl -s 'https://www.makemkv.com/forum2/viewtopic.php?f=5&t=1053' | grep -oP 'T-[\w_-]{66}')";
 if [ -n "$KEY" ]; then
     sed -i "/app_Key/ d" /home/mkv/.MakeMKV/settings.conf
     echo -e "\nINFO: Adding new beta key.\n"
