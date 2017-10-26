@@ -22,6 +22,7 @@ Below are the available environment variables you may use to configure this Dock
 * **MKV_UID** The user ID of the `mkv` user inside the container.
 * **NO_EJECT** Disables ejecting the disc if set to "true".
 * **UMASK** The umask to create directories and MKV files with.
+* **BETA_KEY** The beta key used to extend the beta trial. Can be found here: https://www.makemkv.com/forum2/viewtopic.php?f=5&t=1053
 
 By default **DEVNAME** is automatically detected. If you use the Docker `--privileged` flag (not needed nor recommended)
 and have more than one optical device on your system this automated detection may not work. In these cases you'd want to
