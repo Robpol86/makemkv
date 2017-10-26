@@ -9,6 +9,14 @@ set -e  # Exit script if a command fails.
 set -u  # Treat unset variables as errors and exit immediately.
 set -o pipefail  # Exit script if pipes fail instead of just the last program.
 
+# Add latest beta key.
+KEY=${BETA_KEY:-};
+if [ -n "$KEY" ]; then
+    sed -i "/app_Key/ d" /home/mkv/.MakeMKV/settings.conf
+    echo -e "\nINFO: Adding new beta key.\n"
+    echo "app_Key = \"$KEY\"" >> /home/mkv/.MakeMKV/settings.conf
+fi
+
 # Source function library.
 source /env.sh
 hook post-env
