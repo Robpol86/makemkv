@@ -12,6 +12,9 @@ export DIR_WORKING=
 export ID_FS_LABEL=${ID_FS_LABEL:-}
 export ID_FS_UUID=${ID_FS_UUID:-}
 export UMASK=${UMASK:-$(umask)}
+export EMAIL=${EMAIL:-}
+export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
 
 # Set false booleans to null for fancy bash tricks in rip.sh.
 if [ "$DEBUG" != "true" ]; then DEBUG=; fi

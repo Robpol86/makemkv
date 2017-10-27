@@ -22,6 +22,9 @@ Below are the available environment variables you may use to configure this Dock
 * **MKV_UID** The user ID of the `mkv` user inside the container.
 * **NO_EJECT** Disables ejecting the disc if set to "true".
 * **UMASK** The umask to create directories and MKV files with.
+* **EMAIL** This is only usable if AWS Access Key and AWS Secret Access Key are set. The 'to' and 'from' address that email notifications will come from on success and failure. You must verify this email in AWS SES.
+* **AWS_ACCESS_KEY_ID** The AWS Access Key generated in AWS Identity and Access Management.
+* **AWS_SECRET_ACCESS_KEY** The AWS Secret Access Key, also generated in AWS IAM.
 
 By default **DEVNAME** is automatically detected. If you use the Docker `--privileged` flag (not needed nor recommended)
 and have more than one optical device on your system this automated detection may not work. In these cases you'd want to
