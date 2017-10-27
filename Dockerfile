@@ -20,4 +20,4 @@ COPY hook-post-title.sh /
 COPY hook-end.sh /
 COPY hook-post-on-err.sh /
 
-CMD ["/rip.sh"]
+CMD ["/rip.sh | tee /var/log/makemkv.log"]
