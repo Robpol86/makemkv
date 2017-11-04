@@ -57,8 +57,6 @@ hook () {
 
 # Called when something errors out.
 on_err () {
-    send_fail_email
-
     # Touch failed file.
     if [ -d "$DIR_FINAL" ]; then
         local -x _FAILED_FILE="$DIR_FINAL/failed"
@@ -74,6 +72,8 @@ on_err () {
         eject ${DEBUG:+--verbose} "$DEVNAME"
         hook post-failed-eject
     fi
+
+    send_fail_email
 }
 
 # Prepare the environment before ripping.
@@ -109,6 +109,7 @@ low_space_term () {
     [ ${ret} -ne 5 ] && return
     echo -e "\nERROR: Terminating MakeMKV due to low disk space.\n" >&2
     sync
+    sleep 3
     send_fail_email
     kill 0
 }
@@ -120,6 +121,7 @@ catch_failed () {
     [ ${ret} -ne 5 ] && return
     echo -e "\nERROR: One or more titles failed.\n" >&2
     sync
+    sleep 3
     send_fail_email
     exit 1
 }
