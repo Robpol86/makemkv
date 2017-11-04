@@ -16,8 +16,5 @@ COPY bin/env.sh /
 COPY bin/rip.sh /
 COPY etc/settings.conf /home/mkv/.MakeMKV/
 COPY lib/wrappers.so /
-COPY hook-post-title.sh /
-COPY hook-end.sh /
-COPY hook-post-on-err.sh /
 
-CMD ["/rip.sh | tee /var/log/makemkv.log"]
+CMD ["/rip.sh"]

@@ -134,3 +134,17 @@ move_back () {
     sudo -u mkv mv "$DIR_WORKING/"* "$DIR_FINAL/"
     sudo -u mkv rmdir "$DIR_WORKING"
 }
+
+send_email () {
+    if [ -n "$EMAIL" ] && [ -n "$AWS_ACCESS_KEY_ID" ] && [ -n "$AWS_SECRET_ACCESS_KEY" ]; then
+        aws ses send-email --region us-west-2 --output json --from $EMAIL --to $EMAIL --subject "$1" --text "$2"
+    fi
+}
+
+send_success_email () {
+    send_email "Rip was successful" "This is an email notification to let you know that your rip has finished successfully. Enjoy!" &
+}
+
+send_fail_email () {
+    send_email "Rip was unsuccessful" "$(cat /var/log/makemkv.log)" &
+}
