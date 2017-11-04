@@ -57,6 +57,8 @@ hook () {
 
 # Called when something errors out.
 on_err () {
+    send_fail_email
+
     # Touch failed file.
     if [ -d "$DIR_FINAL" ]; then
         local -x _FAILED_FILE="$DIR_FINAL/failed"
@@ -106,6 +108,7 @@ low_space_term () {
     sed -u "/much as [0-9]\+ megabytes while there are only/q5" || ret=$?
     [ ${ret} -ne 5 ] && return
     echo -e "\nERROR: Terminating MakeMKV due to low disk space.\n" >&2
+    send_fail_email
     sync
     kill 0
 }
@@ -116,6 +119,7 @@ catch_failed () {
     sed -u "/Copy complete. [0-9]\+ titles saved, [0-9]\+ failed./q5" || ret=$?
     [ ${ret} -ne 5 ] && return
     echo -e "\nERROR: One or more titles failed.\n" >&2
+    send_fail_email
     sync
     exit 1
 }
@@ -144,9 +148,9 @@ send_email () {
 }
 
 send_success_email () {
-    send_email "Rip was successful" "$(cat /var/log/makemkv.log)" &
+    send_email "Rip was successful" "$(cat /var/log/makemkv.log)"
 }
 
 send_fail_email () {
-    send_email "Rip was unsuccessful" "$(cat /var/log/makemkv.log)" &
+    send_email "Rip was unsuccessful" "$(cat /var/log/makemkv.log)"
 }

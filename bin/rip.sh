@@ -31,7 +31,7 @@ ripMakeMkv () {
     fi
     
     # Setup trap for hooks and FAILED_EJECT.
-    trap "hook pre-on-err; on_err; hook post-on-err; send_fail_email; wait" ERR
+    trap "hook pre-on-err; on_err; hook post-on-err; wait" ERR
     
     # Prepare the environment before ripping.
     hook pre-prepare
