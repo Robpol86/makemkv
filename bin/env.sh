@@ -108,9 +108,8 @@ low_space_term () {
     sed -u "/much as [0-9]\+ megabytes while there are only/q5" || ret=$?
     [ ${ret} -ne 5 ] && return
     echo -e "\nERROR: Terminating MakeMKV due to low disk space.\n" >&2
-    sync
-    sleep 3
     send_fail_email
+    sync
     kill 0
 }
 
@@ -120,9 +119,8 @@ catch_failed () {
     sed -u "/Copy complete. [0-9]\+ titles saved, [0-9]\+ failed./q5" || ret=$?
     [ ${ret} -ne 5 ] && return
     echo -e "\nERROR: One or more titles failed.\n" >&2
-    sync
-    sleep 3
     send_fail_email
+    sync
     exit 1
 }
 
