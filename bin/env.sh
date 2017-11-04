@@ -142,7 +142,7 @@ send_email () {
 }
 
 send_success_email () {
-    send_email "Rip was successful" "This is an email notification to let you know that your rip has finished successfully. Enjoy!" &
+    send_email "Rip was successful" "$(cat /var/log/makemkv.log)" &
 }
 
 send_fail_email () {
