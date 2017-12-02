@@ -10,14 +10,14 @@ set -u  # Treat unset variables as errors and exit immediately.
 set -o pipefail  # Exit script if pipes fail instead of just the last program.
 
 # Add latest beta key.
-#KEY="$(curl -s 'https://www.makemkv.com/forum2/viewtopic.php?f=5&t=1053' | grep -oP 'T-[\w_-]{66}')";
-#if [ -n "$KEY" ]; then
-#    sed -i "/app_Key/ d" /home/mkv/.MakeMKV/settings.conf
-#    echo -e "\nINFO: Adding new beta key.\n"
-#    echo "app_Key = \"$KEY\"" >> /home/mkv/.MakeMKV/settings.conf
-#else
-#    echo -e "\nWARNING: No beta key fetched.\n" >&2
-#fi
+KEY="$(curl -s 'https://www.makemkv.com/forum2/viewtopic.php?f=5&t=1053' | grep -oP 'T-[\w_-]{66}')";
+if [ -n "$KEY" ]; then
+    sed -i "/app_Key/ d" /home/mkv/.MakeMKV/settings.conf
+    echo -e "\nINFO: Adding new beta key.\n"
+    echo "app_Key = \"$KEY\"" >> /home/mkv/.MakeMKV/settings.conf
+else
+    echo -e "\nWARNING: No beta key fetched.\n" >&2
+fi
 
 # Source function library.
 source /env.sh
