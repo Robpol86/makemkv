@@ -140,10 +140,10 @@ move_back () {
 }
 
 send_email () {
-    if [ -n "$EMAIL" ] && [ -n "$AWS_ACCESS_KEY_ID" ] && [ -n "$AWS_SECRET_ACCESS_KEY" ]; then
-        aws ses send-email --region us-west-2 --output json --from $EMAIL --to $EMAIL --subject "$1" --text "$2"
+    if [ -n "$TO_EMAIL" ] && [ -n "$FROM_EMAIL" ] && [ -n "$AWS_ACCESS_KEY_ID" ] && [ -n "$AWS_SECRET_ACCESS_KEY" ]; then
+        aws ses send-email --region us-west-2 --output json --from $FROM_EMAIL --to $TO_EMAIL --subject "$1" --text "$2"
     else
-        echo "WARNING: Email notifications are not configured correctly."
+        echo "WARNING: Email notifications are not configured or not configured correctly."
     fi
 }
 
